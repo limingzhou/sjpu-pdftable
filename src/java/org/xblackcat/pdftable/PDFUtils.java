@@ -2,6 +2,7 @@ package org.xblackcat.pdftable;
 
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.pdfbox.pdmodel.common.PDRectangle;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -61,13 +62,13 @@ public class PDFUtils {
         return Stream.of(split).map(text::withText).toArray(PDTextPart[]::new);
     }
 
-    public static PDTableCell toFixedWidthCell(float desiredWidth, PDTextPart... textLine) throws IOException {
+    public static PDTextLine[] toFixedWidthCell(float desiredWidth, PDTextPart... textLine) throws IOException {
         return toFixedWidthCell(desiredWidth, new PDTextLine(textLine));
     }
 
-    public static PDTableCell toFixedWidthCell(float desiredWidth, PDTextLine... textLines) throws IOException {
+    public static PDTextLine[] toFixedWidthCell(float desiredWidth, PDTextLine... textLines) throws IOException {
         if (ArrayUtils.isEmpty(textLines)) {
-            return new PDTableCell();
+            return new PDTextLine[9];
         }
 
         Collection<PDTextLine> lines = new ArrayList<>();
@@ -78,16 +79,16 @@ public class PDFUtils {
             }
         }
 
-        return new PDTableCell(lines.stream().toArray(PDTextLine[]::new));
+        return lines.stream().toArray(PDTextLine[]::new);
     }
 
-    public static PDTableCell toCell(PDTextPart... textParts) throws IOException {
+    public static PDTextLine[] toCell(PDTextPart... textParts) throws IOException {
         return toCell(new PDTextLine(textParts));
     }
 
-    public static PDTableCell toCell(PDTextLine... textLines) throws IOException {
+    public static PDTextLine[] toCell(PDTextLine... textLines) throws IOException {
         if (ArrayUtils.isEmpty(textLines)) {
-            return new PDTableCell();
+            return new PDTextLine[0];
         }
 
         Collection<PDTextLine> lines = new ArrayList<>();
@@ -96,7 +97,7 @@ public class PDFUtils {
             lines.addAll(Arrays.asList(split(l, '\n')));
         }
 
-        return new PDTableCell(lines.stream().toArray(PDTextLine[]::new));
+        return lines.stream().toArray(PDTextLine[]::new);
     }
 
     protected static Collection<PDTextLine> wrapLine(float desiredWidth, PDTextLine textLine) throws IOException {
@@ -146,4 +147,57 @@ public class PDFUtils {
         }
         return lines;
     }
+
+    public static float maxHeightOf(IPDMeasurable... objects) throws IOException {
+        float height = 0;
+
+        for (IPDMeasurable m : objects) {
+            if (height < m.getHeight()) {
+                height = m.getHeight();
+            }
+        }
+
+        return height;
+    }
+
+    public static float maxWidthOf(IPDMeasurable... objects) throws IOException {
+        float width = 0;
+
+        for (IPDMeasurable m : objects) {
+            if (width < m.getWidth()) {
+                width = m.getWidth();
+            }
+        }
+
+        return width;
+    }
+
+    public static PDRectangle getRowSize(IPDMeasurable... objects) throws IOException {
+        float height = 0;
+        float width = 0;
+
+        for (IPDMeasurable m : objects) {
+            if (height < m.getHeight()) {
+                height = m.getHeight();
+            }
+            width += m.getWidth();
+        }
+
+        return new PDRectangle(width, height);
+    }
+
+    public static PDRectangle getColSize(IPDMeasurable... objects) throws IOException {
+        float height = 0;
+        float width = 0;
+
+        for (IPDMeasurable m : objects) {
+            if (width < m.getWidth()) {
+                width = m.getWidth();
+            }
+            height += m.getHeight();
+        }
+
+        return new PDRectangle(width, height);
+    }
+
 }

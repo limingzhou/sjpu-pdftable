@@ -18,17 +18,17 @@ public class PDFUtilsTest {
         String text = "I am trying to create a PDF file with a lot of text contents in the document. I am using PDFBox";
 
         {
-            final PDTableCell strings = PDFUtils.toFixedWidthCell(300, new PDTextPart(text, PDType1Font.HELVETICA, 12));
+            final PDTextLine[] strings = PDFUtils.toFixedWidthCell(300, new PDTextPart(text, PDType1Font.HELVETICA, 12));
             Assert.assertArrayEquals(
                     new String[]{
                             "I am trying to create a PDF file with a lot of text",
                             "contents in the document. I am using PDFBox"
                     },
-                    Stream.of(strings.getLines()).map(ITextable::getText).toArray(String[]::new)
+                    Stream.of(strings).map(ITextable::getText).toArray(String[]::new)
             );
         }
         {
-            final PDTableCell strings = PDFUtils.toFixedWidthCell(300, new PDTextPart(text, PDType1Font.HELVETICA, 18));
+            final PDTextLine[] strings = PDFUtils.toFixedWidthCell(300, new PDTextPart(text, PDType1Font.HELVETICA, 18));
             Assert.assertArrayEquals(
                     new String[]{
 
@@ -36,11 +36,11 @@ public class PDFUtilsTest {
                             "a lot of text contents in the",
                             "document. I am using PDFBox"
                     },
-                    Stream.of(strings.getLines()).map(ITextable::getText).toArray(String[]::new)
+                    Stream.of(strings).map(ITextable::getText).toArray(String[]::new)
             );
         }
         {
-            final PDTableCell strings = PDFUtils.toFixedWidthCell(300, new PDTextPart(text, PDType1Font.HELVETICA_BOLD, 18));
+            final PDTextLine[] strings = PDFUtils.toFixedWidthCell(300, new PDTextPart(text, PDType1Font.HELVETICA_BOLD, 18));
             Assert.assertArrayEquals(
                     new String[]{
 
@@ -48,13 +48,13 @@ public class PDFUtilsTest {
                             "with a lot of text contents in the",
                             "document. I am using PDFBox"
                     },
-                    Stream.of(strings.getLines()).map(ITextable::getText).toArray(String[]::new)
+                    Stream.of(strings).map(ITextable::getText).toArray(String[]::new)
             );
         }
         {
             String textML = "I am trying to create a PDF file with a lot of text contents in the document.\nI am using PDFBox";
 
-            final PDTableCell strings = PDFUtils.toFixedWidthCell(300, new PDTextPart(textML, PDType1Font.HELVETICA_BOLD, 18));
+            final PDTextLine[] strings = PDFUtils.toFixedWidthCell(300, new PDTextPart(textML, PDType1Font.HELVETICA_BOLD, 18));
             Assert.assertArrayEquals(
                     new String[]{
 
@@ -63,12 +63,12 @@ public class PDFUtilsTest {
                             "document.",
                             "I am using PDFBox"
                     },
-                    Stream.of(strings.getLines()).map(ITextable::getText).toArray(String[]::new)
+                    Stream.of(strings).map(ITextable::getText).toArray(String[]::new)
             );
         }
         {
             String text1 = "I am trying to create a PDF file with a lot of text contents in the document with one very_long_unbreakable_word_to_split_it. I am using PDFBox";
-            final PDTableCell strings = PDFUtils.toFixedWidthCell(300, new PDTextPart(text1, PDType1Font.HELVETICA_BOLD, 18));
+            final PDTextLine[] strings = PDFUtils.toFixedWidthCell(300, new PDTextPart(text1, PDType1Font.HELVETICA_BOLD, 18));
             Assert.assertArrayEquals(
                     new String[]{
 
@@ -78,7 +78,7 @@ public class PDFUtilsTest {
                             "very_long_unbreakable_word_to_sp",
                             "lit_it. I am using PDFBox"
                     },
-                    Stream.of(strings.getLines()).map(ITextable::getText).toArray(String[]::new)
+                    Stream.of(strings).map(ITextable::getText).toArray(String[]::new)
             );
         }
     }

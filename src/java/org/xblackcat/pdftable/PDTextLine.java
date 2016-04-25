@@ -1,6 +1,7 @@
 package org.xblackcat.pdftable;
 
 import org.apache.commons.lang3.ArrayUtils;
+import org.apache.pdfbox.pdmodel.font.PDFont;
 
 import java.io.IOException;
 import java.util.Collection;
@@ -13,6 +14,10 @@ import java.util.stream.Stream;
  */
 public class PDTextLine implements ITextable, IPDMeasurable {
     private final PDTextPart[] parts;
+
+    public static PDTextLine of(String str, PDFont font, float fontSize) {
+        return new PDTextLine(new PDTextPart(str, font, fontSize));
+    }
 
     public PDTextLine(Collection<PDTextPart> parts) {
         if (parts == null) {

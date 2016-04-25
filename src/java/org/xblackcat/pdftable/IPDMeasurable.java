@@ -8,7 +8,6 @@ import java.io.IOException;
  * @author xBlackCat
  */
 public interface IPDMeasurable {
-
     float getWidth() throws IOException;
 
     float getHeight() throws IOException;
