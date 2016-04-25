@@ -44,7 +44,11 @@ public class PDTextPart implements ITextable, IPDMeasurable {
 
     @Override
     public float getWidth() throws IOException {
-        return font.getStringWidth(text) * fontSize / 1000f;
+        try {
+            return font.getStringWidth(text) * fontSize / 1000f;
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("Font: " + font.getName(), e);
+        }
     }
 
     @Override

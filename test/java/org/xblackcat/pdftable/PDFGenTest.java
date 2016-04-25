@@ -2,6 +2,7 @@ package org.xblackcat.pdftable;
 
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.common.PDRectangle;
+import org.apache.pdfbox.pdmodel.font.PDFont;
 import org.apache.pdfbox.pdmodel.font.PDType1Font;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -64,6 +65,20 @@ public class PDFGenTest {
     }
 
     private static String[] WORDS;
+    private static PDFont[] FONTS = new PDFont[]{
+            PDType1Font.TIMES_ROMAN,
+            PDType1Font.TIMES_BOLD,
+            PDType1Font.TIMES_ITALIC,
+            PDType1Font.TIMES_BOLD_ITALIC,
+            PDType1Font.HELVETICA,
+            PDType1Font.HELVETICA_BOLD,
+            PDType1Font.HELVETICA_OBLIQUE,
+            PDType1Font.HELVETICA_BOLD_OBLIQUE,
+            PDType1Font.COURIER,
+            PDType1Font.COURIER_BOLD,
+            PDType1Font.COURIER_OBLIQUE,
+            PDType1Font.COURIER_BOLD_OBLIQUE
+    };
 
     @BeforeClass
     public static void loadData() throws IOException {
@@ -71,6 +86,7 @@ public class PDFGenTest {
     }
 
     private final DateTimeFormatter pattern = DateTimeFormatter.ofPattern("'r:/test-'yyyy-MM-dd-HH-mm'.pdf'");
+    private final DateTimeFormatter pattern2 = DateTimeFormatter.ofPattern("'r:/test-multifont-'yyyy-MM-dd-HH-mm'.pdf'");
 
     private String buildWord() {
         StringBuilder str = new StringBuilder();
@@ -85,6 +101,22 @@ public class PDFGenTest {
         return str.toString();
     }
 
+    private PDTextLine buildWordMultiFont() {
+        int words = rnd.nextInt(10) + 3;
+        PDTextPart[] parts = new PDTextPart[words + 1];
+        parts[0] = nextPart("");
+        while (words-- > 0) {
+            parts[words + 1] = nextPart(" ");
+        }
+
+        return new PDTextLine(parts);
+    }
+
+    private PDTextPart nextPart(String s) {
+        PDFont font = FONTS[rnd.nextInt(FONTS.length)];
+        return new PDTextPart(s + WORDS[rnd.nextInt(WORDS.length)], font, (rnd.nextInt(20) / 3) + 7);
+    }
+
     public DataGroup[] tableData() {
         int cols = 6;
         int rows = 60;
@@ -94,6 +126,23 @@ public class PDFGenTest {
             String[] row = new String[cols];
             for (int j = 0; j < cols; j++) {
                 row[j] = buildWord();
+            }
+
+            data.add(new DataGroup(row));
+        }
+
+        return data.stream().toArray(DataGroup[]::new);
+    }
+
+    public DataGroup[] tableDataMultiFont() {
+        int cols = 6;
+        int rows = 60;
+
+        Collection<DataGroup> data = new ArrayList<>();
+        for (int i = 0; i < rows; i++) {
+            PDTextLine[] row = new PDTextLine[cols];
+            for (int j = 0; j < cols; j++) {
+                row[j] = buildWordMultiFont();
             }
 
             data.add(new DataGroup(row));
@@ -122,6 +171,29 @@ public class PDFGenTest {
         PDFTable.Drawer drawer = table.drawTable(doc);
         drawer.drawTable(data);
         try (OutputStream os = new FileOutputStream(pattern.format(LocalDateTime.now()))) {
+            doc.save(os);
+            os.flush();
+        }
+
+    }
+
+    @Test
+    public void generatePDFMultiFont() throws IOException {
+        DataGroup[] data = tableDataMultiFont();
+
+        PDFTable table = new PDFTable(
+                new DefaultPDPageProvider(PDRectangle.A4),
+                new DefaultPDRowProvider(
+                        PDTableCell.DEFAULT_PADDING,
+                        (cellObj, col, row, page) -> ((PDTextLine[]) cellObj)[col], 100, 100, 50, 50, 50, 50
+                )
+        );
+
+        PDDocument doc = new PDDocument();
+
+        PDFTable.Drawer drawer = table.drawTable(doc);
+        drawer.drawTable(data);
+        try (OutputStream os = new FileOutputStream(pattern2.format(LocalDateTime.now()))) {
             doc.save(os);
             os.flush();
         }
