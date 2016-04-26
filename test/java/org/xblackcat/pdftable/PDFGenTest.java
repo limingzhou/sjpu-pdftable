@@ -123,7 +123,11 @@ public class PDFGenTest {
 
     private PDTextPart nextPart(String s, ToDoubleFunction<Random> fontSize) {
         PDFont font = FONTS[rnd.nextInt(FONTS.length)];
-        return new PDTextPart(s + WORDS[this.rnd.nextInt(WORDS.length)], font, (float) fontSize.applyAsDouble(this.rnd));
+        return new PDTextPart(s + WORDS[this.rnd.nextInt(WORDS.length)], nextColor(), font, (float) fontSize.applyAsDouble(this.rnd));
+    }
+
+    private Color nextColor() {
+        return new Color(rnd.nextInt(0x1000000));
     }
 
     public DataGroup[] tableData() {
@@ -208,14 +212,16 @@ public class PDFGenTest {
                             return PDTextLine.of(r[col], PDType1Font.TIMES_ROMAN, 8);
                         },
                         PDBorderStyle.fullBorderOf(PDLineStyle.ofColor(Color.blue)),
+                        null,
                         100, 100, 50, 50, 50, 50
                 ),
+                null,
                 null
         );
 
         PDDocument doc = new PDDocument();
 
-        PDFTable.Drawer drawer = table.drawTable(doc);
+        PDFTable.Drawer drawer = table.applyToDocument(doc);
         drawer.drawTable(data);
         try (OutputStream os = new FileOutputStream(pattern.format(LocalDateTime.now()))) {
             doc.save(os);
@@ -235,14 +241,16 @@ public class PDFGenTest {
                         PDTableCell.DEFAULT_PADDING,
                         (cellObj, col, row, page) -> ((PDTextLine[]) cellObj)[col],
                         PDBorderStyle.topBottomBorderOf(PDLineStyle.ofColor(Color.blue)),
+                        null,
                         100, 100, 50, 50, 50, 50
                 ),
-                PDBorderStyle.fullBorderOf(PDLineStyle.ofColor(2, Color.red))
+                PDBorderStyle.fullBorderOf(PDLineStyle.ofColor(2, Color.red)),
+                null
         );
 
         PDDocument doc = new PDDocument();
 
-        PDFTable.Drawer drawer = table.drawTable(doc);
+        PDFTable.Drawer drawer = table.applyToDocument(doc);
         drawer.drawTable(data);
         try (OutputStream os = new FileOutputStream(pattern2.format(LocalDateTime.now()))) {
             doc.save(os);
@@ -261,6 +269,7 @@ public class PDFGenTest {
                         PDTableCell.DEFAULT_PADDING,
                         (cellObj, col, row, page) -> ((PDTextLine[]) cellObj)[col],
                         PDBorderStyle.leftRightBorderOf(PDLineStyle.ofColor(Color.MAGENTA)),
+                        null,
                         200, 300, 200, 80
                 ),
                 new DefaultPDRowProvider(
@@ -268,6 +277,7 @@ public class PDFGenTest {
                         PDTableCell.DEFAULT_PADDING,
                         (cellObj, col, row, page) -> ((PDTextLine[]) cellObj)[col],
                         PDBorderStyle.fullBorderOf(PDLineStyle.ofColor(Color.blue)),
+                        null,
                         200, 200, 100, 100, 100, 80
                 )
         );
@@ -277,12 +287,13 @@ public class PDFGenTest {
                         new PDInsets(40, 50, 30, 50)
                 ),
                 rowProvider,
-                PDBorderStyle.fullBorderOf(PDLineStyle.ofColor(2, Color.red))
+                PDBorderStyle.fullBorderOf(PDLineStyle.ofColor(2, Color.red)),
+                null
         );
 
         PDDocument doc = new PDDocument();
 
-        PDFTable.Drawer drawer = table.drawTable(doc);
+        PDFTable.Drawer drawer = table.applyToDocument(doc);
         drawer.drawTable(data);
         try (OutputStream os = new FileOutputStream(pattern2.format(LocalDateTime.now()))) {
             doc.save(os);
@@ -301,6 +312,7 @@ public class PDFGenTest {
                         PDTableCell.DEFAULT_PADDING,
                         (cellObj, col, row, page) -> ((PDTextLine[]) cellObj)[col],
                         PDBorderStyle.leftRightBorderOf(PDLineStyle.ofColor(Color.orange)),
+                        Color.DARK_GRAY,
                         500, 280
                 ),
                 new DefaultPDRowProvider(
@@ -308,6 +320,7 @@ public class PDFGenTest {
                         PDTableCell.DEFAULT_PADDING,
                         (cellObj, col, row, page) -> ((PDTextLine[]) cellObj)[col],
                         PDBorderStyle.leftRightBorderOf(PDLineStyle.ofColor(Color.MAGENTA)),
+                        Color.pink,
                         200, 300, 200, 80
                 ),
                 new DefaultPDRowProvider(
@@ -315,8 +328,19 @@ public class PDFGenTest {
                         PDTableCell.DEFAULT_PADDING,
                         (cellObj, col, row, page) -> ((PDTextLine[]) cellObj)[col],
                         PDBorderStyle.fullBorderOf(PDLineStyle.ofColor(Color.blue)),
+                        null,
                         200, 200, 100, 100, 100, 80
-                )
+                ) {
+                    @Override
+                    public PDTableRowDef getRowCellInfo(Object rowObject, int level, int row, int page) {
+                        PDTableRowDef cellInfo = super.getRowCellInfo(rowObject, level, row, page);
+                        if (row % 2 == 0) {
+                            return cellInfo;
+                        } else {
+                            return new PDTableRowDef(cellInfo.getBorderStyle(), Color.lightGray, cellInfo.getCellDefs());
+                        }
+                    }
+                }
         );
         PDFTable table = new PDFTable(
                 new DefaultPDPageProvider(
@@ -324,12 +348,13 @@ public class PDFGenTest {
                         new PDInsets(40, 50, 30, 50)
                 ),
                 rowProvider,
-                PDBorderStyle.fullBorderOf(PDLineStyle.ofColor(2, Color.red))
+                PDBorderStyle.fullBorderOf(PDLineStyle.ofColor(2, Color.red)),
+                null
         );
 
         PDDocument doc = new PDDocument();
 
-        PDFTable.Drawer drawer = table.drawTable(doc);
+        PDFTable.Drawer drawer = table.applyToDocument(doc);
         drawer.drawTable(data);
         try (OutputStream os = new FileOutputStream(pattern3.format(LocalDateTime.now()))) {
             doc.save(os);

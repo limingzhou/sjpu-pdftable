@@ -5,6 +5,7 @@ import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPageContentStream;
 import org.apache.pdfbox.pdmodel.common.PDRectangle;
 
+import java.awt.*;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Deque;
@@ -21,24 +22,26 @@ public class PDFTable {
     private final IPDRowProvider rowProvider;
     private final PDBorderStyle borderStyle;
     private final int headersAmount;
+    private final Color background;
 
-    public PDFTable(IPDPageProvider pageProvider, IPDRowProvider rowProvider, PDBorderStyle borderStyle) {
-        this(pageProvider, rowProvider, borderStyle, Integer.MAX_VALUE);
+    public PDFTable(IPDPageProvider pageProvider, IPDRowProvider rowProvider, PDBorderStyle borderStyle, Color background) {
+        this(pageProvider, rowProvider, borderStyle, background, Integer.MAX_VALUE);
     }
 
     public PDFTable(
             IPDPageProvider pageProvider,
             IPDRowProvider rowProvider,
             PDBorderStyle borderStyle,
-            int headersAmount
+            Color background, int headersAmount
     ) {
         this.pageProvider = pageProvider;
         this.rowProvider = rowProvider;
         this.borderStyle = borderStyle;
+        this.background = background;
         this.headersAmount = headersAmount;
     }
 
-    public Drawer drawTable(PDDocument doc) {
+    public Drawer applyToDocument(PDDocument doc) {
         return new Drawer(doc);
     }
 
@@ -58,7 +61,7 @@ public class PDFTable {
 
         private final Deque<PDRenderedRow> headersStack = new LinkedList<>();
 
-        public Drawer(PDDocument doc) {
+        private Drawer(PDDocument doc) {
             this.doc = doc;
         }
 
@@ -146,6 +149,7 @@ public class PDFTable {
             for (int i = 0; i < rr.rowCells.length; i++) {
                 final PDTableCell cell = rr.rowCells[i];
                 PDTableColumn rowCelDef = rr.rowInfo.getCellDefs()[i];
+                drawCellBackground(x, drawY, rowCelDef.getWidth(), rr.rowHeight, rr.rowInfo.getBackground(), rowCelDef.getBackground());
 
                 drawCellText(cell, x);
                 PDBorderStyle borderStyle = rowCelDef.getCellBorderStyle();
@@ -160,6 +164,25 @@ public class PDFTable {
             }
 
             drawY -= rr.rowHeight;
+        }
+
+        private void drawCellBackground(float x, float y, float width, float height, Color rowBG, Color cellBG) throws IOException {
+            final Color background;
+            if (cellBG != null) {
+                background = cellBG;
+            } else if (rowBG != null) {
+                background = rowBG;
+            } else {
+                background = PDFTable.this.background;
+            }
+
+            if (background == null) {
+                return;
+            }
+
+            stream.setNonStrokingColor(background);
+            stream.addRect(x, y - height, width, height);
+            stream.fill();
         }
 
         private PDRenderedRow preRenderedRow(Object valueObj, PDTableRowDef rowInfo) throws IOException {
@@ -193,6 +216,7 @@ public class PDFTable {
         }
 
         private void drawCellText(PDTableCell cell, float x) throws IOException {
+            Color c = null;
             float textSpacing = cell.getTextSpacing();
 
             float heightOffset = drawY - cell.getPadding().top + textSpacing;
@@ -202,6 +226,10 @@ public class PDFTable {
                 heightOffset -= lineHeight - textSpacing;
                 float xx = x + cell.getPadding().left;
                 for (PDTextPart p : l.getParts()) {
+                    if (!p.getColor().equals(c)) {
+                        c = p.getColor();
+                        stream.setNonStrokingColor(c);
+                    }
                     stream.setFont(p.getFont(), p.getFontSize());
                     stream.beginText();
                     stream.newLineAtOffset(xx, heightOffset);

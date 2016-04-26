@@ -2,6 +2,7 @@ package org.xblackcat.pdftable;
 
 import org.apache.pdfbox.pdmodel.font.PDFont;
 
+import java.awt.*;
 import java.io.IOException;
 
 /**
@@ -11,10 +12,15 @@ import java.io.IOException;
  */
 public class PDTextPart implements ITextable, IPDMeasurable {
     private final String text;
+    private final Color color;
     private final PDFont font;
     private final float fontSize;
 
     public PDTextPart(String text, PDFont font, float fontSize) {
+        this(text, null, font, fontSize);
+    }
+
+    public PDTextPart(String text, Color color, PDFont font, float fontSize) {
         if (text == null) {
             throw new NullPointerException("Can't create a text part from null string");
         }
@@ -23,6 +29,11 @@ public class PDTextPart implements ITextable, IPDMeasurable {
         }
         if (fontSize <= 0) {
             throw new NullPointerException("Font size should be positive number");
+        }
+        if (color != null) {
+            this.color = color;
+        } else {
+            this.color = Color.black;
         }
         this.text = text;
         this.font = font;
@@ -40,6 +51,10 @@ public class PDTextPart implements ITextable, IPDMeasurable {
 
     public PDFont getFont() {
         return font;
+    }
+
+    public Color getColor() {
+        return color;
     }
 
     @Override
@@ -62,14 +77,14 @@ public class PDTextPart implements ITextable, IPDMeasurable {
     }
 
     public PDTextPart withFont(PDFont font) {
-        return new PDTextPart(getText(), font, getFontSize());
+        return new PDTextPart(getText(), getColor(), font, getFontSize());
     }
 
     public PDTextPart withFontSize(float fontSize) {
-        return new PDTextPart(getText(), getFont(), fontSize);
+        return new PDTextPart(getText(), getColor(), getFont(), fontSize);
     }
 
     public PDTextPart withText(String s) {
-        return new PDTextPart(s, getFont(), getFontSize());
+        return new PDTextPart(s, getColor(), getFont(), getFontSize());
     }
 }
