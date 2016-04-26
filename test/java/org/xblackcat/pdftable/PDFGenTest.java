@@ -14,6 +14,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.List;
+import java.util.function.ToDoubleFunction;
 import java.util.function.ToIntFunction;
 
 /**
@@ -90,6 +91,7 @@ public class PDFGenTest {
 
     private final DateTimeFormatter pattern = DateTimeFormatter.ofPattern("'r:/test-'yyyy-MM-dd-HH-mm-ss'.pdf'");
     private final DateTimeFormatter pattern2 = DateTimeFormatter.ofPattern("'r:/test-multifont-'yyyy-MM-dd-HH-mm-ss'.pdf'");
+    private final DateTimeFormatter pattern3 = DateTimeFormatter.ofPattern("'r:/test-multifont-multiheader-'yyyy-MM-dd-HH-mm-ss'.pdf'");
 
     private String buildWord() {
         StringBuilder str = new StringBuilder();
@@ -105,19 +107,23 @@ public class PDFGenTest {
     }
 
     private PDTextLine buildWordMultiFont(ToIntFunction<Random> wordsCount) {
+        return buildWordMultiFont(wordsCount, rnd -> (rnd.nextFloat() * 6) + 7);
+    }
+
+    private PDTextLine buildWordMultiFont(ToIntFunction<Random> wordsCount, ToDoubleFunction<Random> fontSize) {
         int words = wordsCount.applyAsInt(this.rnd);
         PDTextPart[] parts = new PDTextPart[words + 1];
-        parts[0] = nextPart("");
+        parts[0] = nextPart("", fontSize);
         while (words-- > 0) {
-            parts[words + 1] = nextPart(" ");
+            parts[words + 1] = nextPart(" ", fontSize);
         }
 
         return new PDTextLine(parts);
     }
 
-    private PDTextPart nextPart(String s) {
+    private PDTextPart nextPart(String s, ToDoubleFunction<Random> fontSize) {
         PDFont font = FONTS[rnd.nextInt(FONTS.length)];
-        return new PDTextPart(s + WORDS[rnd.nextInt(WORDS.length)], font, (rnd.nextFloat() * 6) + 7);
+        return new PDTextPart(s + WORDS[this.rnd.nextInt(WORDS.length)], font, (float) fontSize.applyAsDouble(this.rnd));
     }
 
     public DataGroup[] tableData() {
@@ -139,7 +145,7 @@ public class PDFGenTest {
 
     public DataGroup[] tableDataMultiFont() {
         int cols = 6;
-        int rows = 60;
+        int rows = 20;
 
         Collection<DataGroup> data = new ArrayList<>();
         for (int i = 0; i < rows; i++) {
@@ -154,18 +160,35 @@ public class PDFGenTest {
         return data.stream().toArray(DataGroup[]::new);
     }
 
-    public DataGroup[] tableDataMultiFontWithHeaders() {
+    public DataGroup[] tableDataMultiFontWithHeader() {
         int cols = 6;
-        int rows = 20;
+        int rows = 10;
 
         Collection<DataGroup> data = new ArrayList<>();
         for (int i = 0; i < rows; i++) {
             PDTextLine[] row = new PDTextLine[cols];
             for (int j = 0; j < cols; j++) {
-                row[j] = buildWordMultiFont(rnd -> rnd.nextInt(2) + 1);
+                row[j] = buildWordMultiFont(rnd -> rnd.nextInt(3) + 1, rnd -> (rnd.nextFloat() * 4) + 10);
             }
 
             data.add(new DataGroup(row, tableDataMultiFont()));
+        }
+
+        return data.stream().toArray(DataGroup[]::new);
+    }
+
+    public DataGroup[] tableDataMultiFontWithHeaders() {
+        int cols = 6;
+        int rows = 10;
+
+        Collection<DataGroup> data = new ArrayList<>();
+        for (int i = 0; i < rows; i++) {
+            PDTextLine[] row = new PDTextLine[cols];
+            for (int j = 0; j < cols; j++) {
+                row[j] = buildWordMultiFont(rnd -> rnd.nextInt(2) + 1, rnd -> (rnd.nextFloat() * 4) + 14);
+            }
+
+            data.add(new DataGroup(row, tableDataMultiFontWithHeader()));
         }
 
         return data.stream().toArray(DataGroup[]::new);
@@ -229,8 +252,8 @@ public class PDFGenTest {
     }
 
     @Test
-    public void generatePDFMultiFontWithHeaders() throws IOException {
-        DataGroup[] data = tableDataMultiFontWithHeaders();
+    public void generatePDFMultiFontWithHeader() throws IOException {
+        DataGroup[] data = tableDataMultiFontWithHeader();
 
         IPDRowProvider rowProvider = new DefaultLevelPDRowProvider(
                 new DefaultPDRowProvider(
@@ -262,6 +285,53 @@ public class PDFGenTest {
         PDFTable.Drawer drawer = table.drawTable(doc);
         drawer.drawTable(data);
         try (OutputStream os = new FileOutputStream(pattern2.format(LocalDateTime.now()))) {
+            doc.save(os);
+            os.flush();
+        }
+
+    }
+
+    @Test
+    public void generatePDFMultiFontWithHeaders() throws IOException {
+        DataGroup[] data = tableDataMultiFontWithHeaders();
+
+        IPDRowProvider rowProvider = new DefaultLevelPDRowProvider(
+                new DefaultPDRowProvider(
+                        PDBorderStyle.fullBorderOf(PDLineStyle.ofColor(8, Color.GRAY)),
+                        PDTableCell.DEFAULT_PADDING,
+                        (cellObj, col, row, page) -> ((PDTextLine[]) cellObj)[col],
+                        PDBorderStyle.leftRightBorderOf(PDLineStyle.ofColor(Color.orange)),
+                        500, 280
+                ),
+                new DefaultPDRowProvider(
+                        PDBorderStyle.fullBorderOf(PDLineStyle.ofColor(6, Color.YELLOW)),
+                        PDTableCell.DEFAULT_PADDING,
+                        (cellObj, col, row, page) -> ((PDTextLine[]) cellObj)[col],
+                        PDBorderStyle.leftRightBorderOf(PDLineStyle.ofColor(Color.MAGENTA)),
+                        200, 300, 200, 80
+                ),
+                new DefaultPDRowProvider(
+                        PDBorderStyle.leftRightBorderOf(PDLineStyle.ofColor(4, Color.GREEN)),
+                        PDTableCell.DEFAULT_PADDING,
+                        (cellObj, col, row, page) -> ((PDTextLine[]) cellObj)[col],
+                        PDBorderStyle.fullBorderOf(PDLineStyle.ofColor(Color.blue)),
+                        200, 200, 100, 100, 100, 80
+                )
+        );
+        PDFTable table = new PDFTable(
+                new DefaultPDPageProvider(
+                        new PDRectangle(PDRectangle.A4.getHeight(), PDRectangle.A4.getWidth()),
+                        new PDInsets(40, 50, 30, 50)
+                ),
+                rowProvider,
+                PDBorderStyle.fullBorderOf(PDLineStyle.ofColor(2, Color.red))
+        );
+
+        PDDocument doc = new PDDocument();
+
+        PDFTable.Drawer drawer = table.drawTable(doc);
+        drawer.drawTable(data);
+        try (OutputStream os = new FileOutputStream(pattern3.format(LocalDateTime.now()))) {
             doc.save(os);
             os.flush();
         }
