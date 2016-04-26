@@ -10,28 +10,23 @@ import java.io.IOException;
 public class PDTableCell implements ITextable, IPDMeasurable {
     public static final PDInsets DEFAULT_PADDING = new PDInsets(5, 5, 5, 5);
 
-    private final float declaredWidth;
     private final float textSpacing;
     private final PDInsets padding;
     private final PDTextLine[] lines;
 
     public PDTableCell(PDTextLine... lines) {
-        this(0, lines);
+        this(DEFAULT_PADDING, lines);
     }
 
-    public PDTableCell(float declaredWidth, PDTextLine... lines) {
-        this(DEFAULT_PADDING, declaredWidth, lines);
+    public PDTableCell(PDInsets padding, PDTextLine... lines) {
+        this(0, padding, lines);
     }
 
-    public PDTableCell(PDInsets padding, float declaredWidth, PDTextLine... lines) {
-        this(0, padding, declaredWidth, lines);
+    public PDTableCell(float textSpacing, PDTextLine... lines) {
+        this(textSpacing, DEFAULT_PADDING, lines);
     }
 
-    public PDTableCell(float textSpacing, float declaredWidth, PDTextLine... lines) {
-        this(textSpacing, DEFAULT_PADDING, declaredWidth, lines);
-    }
-
-    public PDTableCell(float textSpacing, PDInsets padding, float declaredWidth, PDTextLine... lines) {
+    public PDTableCell(float textSpacing, PDInsets padding, PDTextLine... lines) {
         this.textSpacing = textSpacing;
         this.lines = lines;
         if (padding != null) {
@@ -39,7 +34,6 @@ public class PDTableCell implements ITextable, IPDMeasurable {
         } else {
             this.padding = DEFAULT_PADDING;
         }
-        this.declaredWidth = declaredWidth;
     }
 
     public PDTextLine[] getLines() {

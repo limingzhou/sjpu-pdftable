@@ -6,5 +6,5 @@ package org.xblackcat.pdftable;
  * @author xBlackCat
  */
 public interface IPDRowProvider {
-    PDTableColumn[] getRowCellInfo(Object rowObject, int level, int row, int page);
+    PDTableRowDef getRowCellInfo(Object rowObject, int level, int row, int page);
 }

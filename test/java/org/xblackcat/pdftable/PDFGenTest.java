@@ -7,11 +7,13 @@ import org.apache.pdfbox.pdmodel.font.PDType1Font;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import java.awt.*;
 import java.io.*;
 import java.net.URL;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.List;
 
 /**
  * 25.04.2016 14:50
@@ -158,12 +160,16 @@ public class PDFGenTest {
         PDFTable table = new PDFTable(
                 new DefaultPDPageProvider(PDRectangle.A4),
                 new DefaultPDRowProvider(
+                        PDBorderStyle.fullBorderOf(PDLineStyle.ofColor(4, Color.GREEN)),
                         PDTableCell.DEFAULT_PADDING,
                         (cellObj, col, row, page) -> {
                             String[] r = (String[]) cellObj;
                             return PDTextLine.of(r[col], PDType1Font.TIMES_ROMAN, 8);
-                        }, 100, 100, 50, 50, 50, 50
-                )
+                        },
+                        PDBorderStyle.fullBorderOf(PDLineStyle.ofColor(Color.blue)),
+                        100, 100, 50, 50, 50, 50
+                ),
+                null
         );
 
         PDDocument doc = new PDDocument();
@@ -184,9 +190,13 @@ public class PDFGenTest {
         PDFTable table = new PDFTable(
                 new DefaultPDPageProvider(PDRectangle.A4),
                 new DefaultPDRowProvider(
+                        PDBorderStyle.leftRightBorderOf(PDLineStyle.ofColor(4, Color.GREEN)),
                         PDTableCell.DEFAULT_PADDING,
-                        (cellObj, col, row, page) -> ((PDTextLine[]) cellObj)[col], 100, 100, 50, 50, 50, 50
-                )
+                        (cellObj, col, row, page) -> ((PDTextLine[]) cellObj)[col],
+                        PDBorderStyle.topBottomBorderOf(PDLineStyle.ofColor(Color.blue)),
+                        100, 100, 50, 50, 50, 50
+                ),
+                null
         );
 
         PDDocument doc = new PDDocument();
