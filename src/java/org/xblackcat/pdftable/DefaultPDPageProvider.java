@@ -34,17 +34,12 @@ public class DefaultPDPageProvider implements IPDPageProvider {
     }
 
     @Override
-    public PDInsets getDrawMargins() {
+    public PDInsets getDrawMargins(int pageNum) {
         return defaultPadding;
     }
 
     @Override
-    public float getPageWidth() {
-        return pageSize.getWidth();
-    }
-
-    @Override
-    public float getPageHeight() {
-        return pageSize.getHeight();
+    public PDRectangle getPageSize(int pageNum) {
+        return pageSize;
     }
 }

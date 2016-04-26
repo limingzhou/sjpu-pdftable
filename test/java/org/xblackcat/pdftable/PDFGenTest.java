@@ -87,8 +87,8 @@ public class PDFGenTest {
         WORDS = loadListFromResource("/words.txt").stream().toArray(String[]::new);
     }
 
-    private final DateTimeFormatter pattern = DateTimeFormatter.ofPattern("'r:/test-'yyyy-MM-dd-HH-mm'.pdf'");
-    private final DateTimeFormatter pattern2 = DateTimeFormatter.ofPattern("'r:/test-multifont-'yyyy-MM-dd-HH-mm'.pdf'");
+    private final DateTimeFormatter pattern = DateTimeFormatter.ofPattern("'r:/test-'yyyy-MM-dd-HH-mm-ss'.pdf'");
+    private final DateTimeFormatter pattern2 = DateTimeFormatter.ofPattern("'r:/test-multifont-'yyyy-MM-dd-HH-mm-ss'.pdf'");
 
     private String buildWord() {
         StringBuilder str = new StringBuilder();
@@ -188,7 +188,7 @@ public class PDFGenTest {
         DataGroup[] data = tableDataMultiFont();
 
         PDFTable table = new PDFTable(
-                new DefaultPDPageProvider(PDRectangle.A4),
+                new DefaultPDPageProvider(PDRectangle.A4, new PDInsets(40, 50, 30, 50)),
                 new DefaultPDRowProvider(
                         PDBorderStyle.leftRightBorderOf(PDLineStyle.ofColor(4, Color.GREEN)),
                         PDTableCell.DEFAULT_PADDING,
@@ -196,7 +196,7 @@ public class PDFGenTest {
                         PDBorderStyle.topBottomBorderOf(PDLineStyle.ofColor(Color.blue)),
                         100, 100, 50, 50, 50, 50
                 ),
-                null
+                PDBorderStyle.fullBorderOf(PDLineStyle.ofColor(2, Color.red))
         );
 
         PDDocument doc = new PDDocument();

@@ -3,6 +3,7 @@ package org.xblackcat.pdftable;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPageContentStream;
+import org.apache.pdfbox.pdmodel.common.PDRectangle;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -16,9 +17,9 @@ import java.util.List;
 public class PDFTable {
     private final IPDPageProvider pageProvider;
     private final IPDRowProvider rowProvider;
-    private final PDLineStyle borderStyle;
+    private final PDBorderStyle borderStyle;
 
-    public PDFTable(IPDPageProvider pageProvider, IPDRowProvider rowProvider, PDLineStyle borderStyle) {
+    public PDFTable(IPDPageProvider pageProvider, IPDRowProvider rowProvider, PDBorderStyle borderStyle) {
         this.pageProvider = pageProvider;
         this.rowProvider = rowProvider;
         this.borderStyle = borderStyle;
@@ -31,14 +32,15 @@ public class PDFTable {
     public class Drawer {
         private final PDDocument doc;
 
-        private final PDInsets drawMargins = pageProvider.getDrawMargins();
-        private final float curPageHeight = pageProvider.getPageHeight();
-        private final float curPageWidth = pageProvider.getPageWidth();
+        private PDInsets curPageDrawMargins;
+        private float curPageHeight;
+        private float curPageWidth;
 
         private int curPage = 0;
         private int curRow = 0;
+        private float tableWidth = 0;
         private PDPageContentStream stream = null;
-        private float remainHeight;
+        private float drawY;
 
         public Drawer(PDDocument doc) {
             this.doc = doc;
@@ -62,8 +64,13 @@ public class PDFTable {
             }
 
             curPage++;
+            tableWidth = 0;
             stream = pageProvider.buildPage(doc, curPage);
-            remainHeight = curPageHeight - drawMargins.bottom - drawMargins.top;
+            curPageDrawMargins = pageProvider.getDrawMargins(curPage);
+            PDRectangle pageSize = pageProvider.getPageSize(curPage);
+            curPageHeight = pageSize.getHeight();
+            curPageWidth = pageSize.getWidth();
+            drawY = curPageHeight - curPageDrawMargins.top;
         }
 
         private void drawRow(int level, DataGroup g) throws IOException {
@@ -94,11 +101,20 @@ public class PDFTable {
                     }
                 }
             }
-            if (rowHeight > remainHeight) {
+            if (rowHeight > drawY - curPageDrawMargins.bottom) {
+                if (borderStyle != null) {
+                    borderStyle.applyToStream(
+                            stream,
+                            curPageDrawMargins.left,
+                            curPageHeight - curPageDrawMargins.top,
+                            tableWidth,
+                            curPageHeight - drawY - curPageDrawMargins.top
+                    );
+                }
                 startNewPage();
             }
 
-            float x = drawMargins.left;
+            float x = curPageDrawMargins.left;
             for (int i = 0; i < rowCells.length; i++) {
                 final PDTableCell cell = rowCells[i];
                 PDTableColumn rowCelDef = rowDef[i];
@@ -106,18 +122,22 @@ public class PDFTable {
                 drawCellText(cell, x);
                 PDBorderStyle borderStyle = rowCelDef.getCellBorderStyle();
                 if (borderStyle != null) {
-                    borderStyle.applyToStream(stream, x, remainHeight, rowCelDef.getWidth(), rowHeight);
+                    borderStyle.applyToStream(stream, x, drawY, rowCelDef.getWidth(), rowHeight);
                 }
                 x += rowCelDef.getWidth();
             }
 
             if (rowInfo.getBorderStyle() != null) {
-                rowInfo.getBorderStyle().applyToStream(stream, drawMargins.left, remainHeight, rowWidth, rowHeight);
+                rowInfo.getBorderStyle().applyToStream(stream, curPageDrawMargins.left, drawY, rowWidth, rowHeight);
             }
 
-            remainHeight -= rowHeight;
+            drawY -= rowHeight;
 
             curRow++;
+
+            if (tableWidth < rowWidth) {
+                tableWidth = rowWidth;
+            }
 
             if (ArrayUtils.isNotEmpty(g.getValues())) {
                 for (DataGroup sg : g.getValues()) {
@@ -129,7 +149,7 @@ public class PDFTable {
         private void drawCellText(PDTableCell cell, float x) throws IOException {
             float textSpacing = cell.getTextSpacing();
 
-            float heightOffset = remainHeight - cell.getPadding().top + textSpacing;
+            float heightOffset = drawY - cell.getPadding().top + textSpacing;
 
             for (PDTextLine l : cell.getLines()) {
                 float lineHeight = l.getHeight();

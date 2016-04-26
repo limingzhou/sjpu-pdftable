@@ -2,6 +2,7 @@ package org.xblackcat.pdftable;
 
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPageContentStream;
+import org.apache.pdfbox.pdmodel.common.PDRectangle;
 
 import java.io.IOException;
 
@@ -13,9 +14,7 @@ import java.io.IOException;
 public interface IPDPageProvider {
     PDPageContentStream buildPage(PDDocument doc, int pageNum) throws IOException;
 
-    PDInsets getDrawMargins();
+    PDInsets getDrawMargins(int pageNum);
 
-    float getPageWidth();
-
-    float getPageHeight();
+    PDRectangle getPageSize(int pageNum);
 }
