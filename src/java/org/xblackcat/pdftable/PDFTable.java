@@ -7,6 +7,8 @@ import org.apache.pdfbox.pdmodel.common.PDRectangle;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Deque;
+import java.util.LinkedList;
 import java.util.List;
 
 /**
@@ -18,11 +20,22 @@ public class PDFTable {
     private final IPDPageProvider pageProvider;
     private final IPDRowProvider rowProvider;
     private final PDBorderStyle borderStyle;
+    private final int headersAmount;
 
     public PDFTable(IPDPageProvider pageProvider, IPDRowProvider rowProvider, PDBorderStyle borderStyle) {
+        this(pageProvider, rowProvider, borderStyle, Integer.MAX_VALUE);
+    }
+
+    public PDFTable(
+            IPDPageProvider pageProvider,
+            IPDRowProvider rowProvider,
+            PDBorderStyle borderStyle,
+            int headersAmount
+    ) {
         this.pageProvider = pageProvider;
         this.rowProvider = rowProvider;
         this.borderStyle = borderStyle;
+        this.headersAmount = headersAmount;
     }
 
     public Drawer drawTable(PDDocument doc) {
@@ -41,6 +54,9 @@ public class PDFTable {
         private float tableWidth = 0;
         private PDPageContentStream stream = null;
         private float drawY;
+        private boolean firstRowOnPage = true;
+
+        private final Deque<PDRenderedRow> headersStack = new LinkedList<>();
 
         public Drawer(PDDocument doc) {
             this.doc = doc;
@@ -50,7 +66,7 @@ public class PDFTable {
             startNewPage();
 
             for (DataGroup g : data) {
-                drawRow(0, g);
+                drawGroup(g);
             }
 
             if (stream != null) {
@@ -71,10 +87,82 @@ public class PDFTable {
             curPageHeight = pageSize.getHeight();
             curPageWidth = pageSize.getWidth();
             drawY = curPageHeight - curPageDrawMargins.top;
+            firstRowOnPage = true;
         }
 
-        private void drawRow(int level, DataGroup g) throws IOException {
-            PDTableRowDef rowInfo = rowProvider.getRowCellInfo(g.getKey(), level, curRow, curPage);
+        private void drawGroup(DataGroup g) throws IOException {
+            Object valueObj = g.getKey();
+            PDTableRowDef rowInfo = rowProvider.getRowCellInfo(valueObj, headersStack.size(), curRow, curPage);
+            PDRenderedRow rr = preRenderedRow(valueObj, rowInfo);
+            if (firstRowOnPage) {
+                firstRowOnPage = false;
+            } else if (rr.rowHeight > drawY - curPageDrawMargins.bottom) {
+                drawTableBorder();
+                startNewPage();
+
+                int i = 0;
+                for (PDRenderedRow header : headersStack) {
+                    if (i++ > headersAmount) {
+                        break;
+                    }
+
+                    drawRow(header);
+                }
+            }
+
+            drawRow(rr);
+
+            curRow++;
+
+            if (tableWidth < rr.rowWidth) {
+                tableWidth = rr.rowWidth;
+            }
+
+            if (ArrayUtils.isNotEmpty(g.getValues())) {
+                headersStack.addLast(rr);
+                for (DataGroup sg : g.getValues()) {
+                    drawGroup(sg);
+                }
+                if (headersStack.removeLast() != rr) {
+                    throw new IllegalStateException("Headers stack is broken!");
+                }
+            }
+        }
+
+        private void drawTableBorder() throws IOException {
+            if (borderStyle != null) {
+                borderStyle.applyToStream(
+                        stream,
+                        curPageDrawMargins.left,
+                        curPageHeight - curPageDrawMargins.top,
+                        tableWidth,
+                        curPageHeight - drawY - curPageDrawMargins.top
+                );
+            }
+        }
+
+        private void drawRow(PDRenderedRow rr) throws IOException {
+            float x = curPageDrawMargins.left;
+            for (int i = 0; i < rr.rowCells.length; i++) {
+                final PDTableCell cell = rr.rowCells[i];
+                PDTableColumn rowCelDef = rr.rowInfo.getCellDefs()[i];
+
+                drawCellText(cell, x);
+                PDBorderStyle borderStyle = rowCelDef.getCellBorderStyle();
+                if (borderStyle != null) {
+                    borderStyle.applyToStream(stream, x, drawY, rowCelDef.getWidth(), rr.rowHeight);
+                }
+                x += rowCelDef.getWidth();
+            }
+
+            if (rr.rowInfo.getBorderStyle() != null) {
+                rr.rowInfo.getBorderStyle().applyToStream(stream, curPageDrawMargins.left, drawY, rr.rowWidth, rr.rowHeight);
+            }
+
+            drawY -= rr.rowHeight;
+        }
+
+        private PDRenderedRow preRenderedRow(Object valueObj, PDTableRowDef rowInfo) throws IOException {
             PDTableColumn[] rowDef = rowInfo.getCellDefs();
             PDTableCell[] rowCells = new PDTableCell[rowDef.length];
             float rowHeight = 0;
@@ -85,7 +173,7 @@ public class PDFTable {
                     PDTableColumn col = rowDef[i];
                     PDInsets padding = col.getPadding();
                     final PDTextLine[] lines;
-                    PDTextLine value = col.getRenderer().getValue(g.getKey(), i, curRow, curPage);
+                    PDTextLine value = col.getRenderer().getValue(valueObj, i, curRow, curPage);
                     if (col.getWidth() >= 0) {
                         lines = PDFUtils.toFixedWidthCell(col.getWidth() - padding.left - padding.right, value);
                     } else {
@@ -101,49 +189,7 @@ public class PDFTable {
                     }
                 }
             }
-            if (rowHeight > drawY - curPageDrawMargins.bottom) {
-                if (borderStyle != null) {
-                    borderStyle.applyToStream(
-                            stream,
-                            curPageDrawMargins.left,
-                            curPageHeight - curPageDrawMargins.top,
-                            tableWidth,
-                            curPageHeight - drawY - curPageDrawMargins.top
-                    );
-                }
-                startNewPage();
-            }
-
-            float x = curPageDrawMargins.left;
-            for (int i = 0; i < rowCells.length; i++) {
-                final PDTableCell cell = rowCells[i];
-                PDTableColumn rowCelDef = rowDef[i];
-
-                drawCellText(cell, x);
-                PDBorderStyle borderStyle = rowCelDef.getCellBorderStyle();
-                if (borderStyle != null) {
-                    borderStyle.applyToStream(stream, x, drawY, rowCelDef.getWidth(), rowHeight);
-                }
-                x += rowCelDef.getWidth();
-            }
-
-            if (rowInfo.getBorderStyle() != null) {
-                rowInfo.getBorderStyle().applyToStream(stream, curPageDrawMargins.left, drawY, rowWidth, rowHeight);
-            }
-
-            drawY -= rowHeight;
-
-            curRow++;
-
-            if (tableWidth < rowWidth) {
-                tableWidth = rowWidth;
-            }
-
-            if (ArrayUtils.isNotEmpty(g.getValues())) {
-                for (DataGroup sg : g.getValues()) {
-                    drawRow(level + 1, sg);
-                }
-            }
+            return new PDRenderedRow(rowInfo, rowCells, rowHeight, rowWidth);
         }
 
         private void drawCellText(PDTableCell cell, float x) throws IOException {
@@ -181,4 +227,22 @@ public class PDFTable {
 
     }
 
+    /**
+     * 26.04.2016 12:39
+     *
+     * @author xBlackCat
+     */
+    private static class PDRenderedRow {
+        private final PDTableRowDef rowInfo;
+        private final PDTableCell[] rowCells;
+        private final float rowHeight;
+        private final float rowWidth;
+
+        PDRenderedRow(PDTableRowDef rowInfo, PDTableCell[] rowCells, float rowHeight, float rowWidth) {
+            this.rowInfo = rowInfo;
+            this.rowCells = rowCells;
+            this.rowHeight = rowHeight;
+            this.rowWidth = rowWidth;
+        }
+    }
 }

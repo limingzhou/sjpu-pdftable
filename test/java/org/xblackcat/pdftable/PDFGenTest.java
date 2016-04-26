@@ -14,6 +14,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.List;
+import java.util.function.ToIntFunction;
 
 /**
  * 25.04.2016 14:50
@@ -103,8 +104,8 @@ public class PDFGenTest {
         return str.toString();
     }
 
-    private PDTextLine buildWordMultiFont() {
-        int words = rnd.nextInt(10) + 3;
+    private PDTextLine buildWordMultiFont(ToIntFunction<Random> wordsCount) {
+        int words = wordsCount.applyAsInt(this.rnd);
         PDTextPart[] parts = new PDTextPart[words + 1];
         parts[0] = nextPart("");
         while (words-- > 0) {
@@ -116,7 +117,7 @@ public class PDFGenTest {
 
     private PDTextPart nextPart(String s) {
         PDFont font = FONTS[rnd.nextInt(FONTS.length)];
-        return new PDTextPart(s + WORDS[rnd.nextInt(WORDS.length)], font, (rnd.nextInt(20) / 3) + 7);
+        return new PDTextPart(s + WORDS[rnd.nextInt(WORDS.length)], font, (rnd.nextFloat() * 6) + 7);
     }
 
     public DataGroup[] tableData() {
@@ -144,10 +145,27 @@ public class PDFGenTest {
         for (int i = 0; i < rows; i++) {
             PDTextLine[] row = new PDTextLine[cols];
             for (int j = 0; j < cols; j++) {
-                row[j] = buildWordMultiFont();
+                row[j] = buildWordMultiFont(rnd -> rnd.nextInt(5) + 3);
             }
 
             data.add(new DataGroup(row));
+        }
+
+        return data.stream().toArray(DataGroup[]::new);
+    }
+
+    public DataGroup[] tableDataMultiFontWithHeaders() {
+        int cols = 6;
+        int rows = 20;
+
+        Collection<DataGroup> data = new ArrayList<>();
+        for (int i = 0; i < rows; i++) {
+            PDTextLine[] row = new PDTextLine[cols];
+            for (int j = 0; j < cols; j++) {
+                row[j] = buildWordMultiFont(rnd -> rnd.nextInt(2) + 1);
+            }
+
+            data.add(new DataGroup(row, tableDataMultiFont()));
         }
 
         return data.stream().toArray(DataGroup[]::new);
@@ -196,6 +214,46 @@ public class PDFGenTest {
                         PDBorderStyle.topBottomBorderOf(PDLineStyle.ofColor(Color.blue)),
                         100, 100, 50, 50, 50, 50
                 ),
+                PDBorderStyle.fullBorderOf(PDLineStyle.ofColor(2, Color.red))
+        );
+
+        PDDocument doc = new PDDocument();
+
+        PDFTable.Drawer drawer = table.drawTable(doc);
+        drawer.drawTable(data);
+        try (OutputStream os = new FileOutputStream(pattern2.format(LocalDateTime.now()))) {
+            doc.save(os);
+            os.flush();
+        }
+
+    }
+
+    @Test
+    public void generatePDFMultiFontWithHeaders() throws IOException {
+        DataGroup[] data = tableDataMultiFontWithHeaders();
+
+        IPDRowProvider rowProvider = new DefaultLevelPDRowProvider(
+                new DefaultPDRowProvider(
+                        PDBorderStyle.fullBorderOf(PDLineStyle.ofColor(6, Color.YELLOW)),
+                        PDTableCell.DEFAULT_PADDING,
+                        (cellObj, col, row, page) -> ((PDTextLine[]) cellObj)[col],
+                        PDBorderStyle.leftRightBorderOf(PDLineStyle.ofColor(Color.MAGENTA)),
+                        200, 300, 200, 80
+                ),
+                new DefaultPDRowProvider(
+                        PDBorderStyle.leftRightBorderOf(PDLineStyle.ofColor(4, Color.GREEN)),
+                        PDTableCell.DEFAULT_PADDING,
+                        (cellObj, col, row, page) -> ((PDTextLine[]) cellObj)[col],
+                        PDBorderStyle.fullBorderOf(PDLineStyle.ofColor(Color.blue)),
+                        200, 200, 100, 100, 100, 80
+                )
+        );
+        PDFTable table = new PDFTable(
+                new DefaultPDPageProvider(
+                        new PDRectangle(PDRectangle.A4.getHeight(), PDRectangle.A4.getWidth()),
+                        new PDInsets(40, 50, 30, 50)
+                ),
+                rowProvider,
                 PDBorderStyle.fullBorderOf(PDLineStyle.ofColor(2, Color.red))
         );
 
