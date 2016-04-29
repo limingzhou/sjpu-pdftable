@@ -10,7 +10,7 @@ import java.io.IOException;
  *
  * @author xBlackCat
  */
-public class PDTextPart implements ITextable, IPDMeasurable {
+public class PDTextPart extends APDMeasurable implements ITextable {
     private final String text;
     private final Color color;
     private final PDFont font;
@@ -58,16 +58,18 @@ public class PDTextPart implements ITextable, IPDMeasurable {
     }
 
     @Override
-    public float getWidth() throws IOException {
+    protected float measureWidth() throws IOException {
+        final Float width;
         try {
-            return font.getStringWidth(text) * fontSize / 1000f;
+            width = font.getStringWidth(text) * fontSize / 1000f;
         } catch (IllegalArgumentException e) {
             throw new IllegalArgumentException("Font: " + font.getName(), e);
         }
+        return width;
     }
 
     @Override
-    public float getHeight() throws IOException {
+    protected float measureHeight() {
         return font.getFontDescriptor().getFontBoundingBox().getHeight() / 1000 * fontSize;
     }
 

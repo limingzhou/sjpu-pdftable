@@ -147,11 +147,11 @@ public class PDFTable {
         private void drawRow(PDRenderedRow rr) throws IOException {
             float x = curPageDrawMargins.left;
             for (int i = 0; i < rr.rowCells.length; i++) {
-                final PDTableCell cell = rr.rowCells[i];
+                final IPDTableCell cell = rr.rowCells[i];
                 PDTableColumn rowCelDef = rr.rowInfo.getCellDefs()[i];
                 drawCellBackground(x, drawY, rowCelDef.getWidth(), rr.rowHeight, rr.rowInfo.getBackground(), rowCelDef.getBackground());
 
-                drawCellText(cell, x);
+                cell.drawCell(stream, x, drawY);
                 PDBorderStyle borderStyle = rowCelDef.getCellBorderStyle();
                 if (borderStyle != null) {
                     borderStyle.applyToStream(stream, x, drawY, rowCelDef.getWidth(), rr.rowHeight);
@@ -187,7 +187,7 @@ public class PDFTable {
 
         private PDRenderedRow preRenderedRow(Object valueObj, PDTableRowDef rowInfo) throws IOException {
             PDTableColumn[] rowDef = rowInfo.getCellDefs();
-            PDTableCell[] rowCells = new PDTableCell[rowDef.length];
+            PDTableTextCell[] rowCells = new PDTableTextCell[rowDef.length];
             float rowHeight = 0;
             float rowWidth = 0;
             {
@@ -202,7 +202,7 @@ public class PDFTable {
                     } else {
                         lines = PDFUtils.toCell(value);
                     }
-                    PDTableCell cell = new PDTableCell(lines);
+                    PDTableTextCell cell = new PDTableTextCell(lines);
                     rowCells[i] = cell;
                     float cellHeight = cell.getHeight();
                     rowWidth += col.getWidth();
@@ -213,31 +213,6 @@ public class PDFTable {
                 }
             }
             return new PDRenderedRow(rowInfo, rowCells, rowHeight, rowWidth);
-        }
-
-        private void drawCellText(PDTableCell cell, float x) throws IOException {
-            Color c = null;
-            float textSpacing = cell.getTextSpacing();
-
-            float heightOffset = drawY - cell.getPadding().top + textSpacing;
-
-            for (PDTextLine l : cell.getLines()) {
-                float lineHeight = l.getHeight();
-                heightOffset -= lineHeight - textSpacing;
-                float xx = x + cell.getPadding().left;
-                for (PDTextPart p : l.getParts()) {
-                    if (!p.getColor().equals(c)) {
-                        c = p.getColor();
-                        stream.setNonStrokingColor(c);
-                    }
-                    stream.setFont(p.getFont(), p.getFontSize());
-                    stream.beginText();
-                    stream.newLineAtOffset(xx, heightOffset);
-                    stream.showText(p.getText());
-                    stream.endText();
-                    xx += p.getWidth();
-                }
-            }
         }
 
     }
@@ -262,11 +237,11 @@ public class PDFTable {
      */
     private static class PDRenderedRow {
         private final PDTableRowDef rowInfo;
-        private final PDTableCell[] rowCells;
+        private final IPDTableCell[] rowCells;
         private final float rowHeight;
         private final float rowWidth;
 
-        PDRenderedRow(PDTableRowDef rowInfo, PDTableCell[] rowCells, float rowHeight, float rowWidth) {
+        PDRenderedRow(PDTableRowDef rowInfo, PDTableTextCell[] rowCells, float rowHeight, float rowWidth) {
             this.rowInfo = rowInfo;
             this.rowCells = rowCells;
             this.rowHeight = rowHeight;

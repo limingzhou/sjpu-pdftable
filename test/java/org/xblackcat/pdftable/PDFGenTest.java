@@ -206,7 +206,7 @@ public class PDFGenTest {
                 new DefaultPDPageProvider(PDRectangle.A4),
                 new DefaultPDRowProvider(
                         PDBorderStyle.fullBorderOf(PDLineStyle.ofColor(4, Color.GREEN)),
-                        PDTableCell.DEFAULT_PADDING,
+                        PDTableTextCell.DEFAULT_PADDING,
                         (cellObj, col, row, page) -> {
                             String[] r = (String[]) cellObj;
                             return PDTextLine.of(r[col], PDType1Font.TIMES_ROMAN, 8);
@@ -238,7 +238,7 @@ public class PDFGenTest {
                 new DefaultPDPageProvider(PDRectangle.A4, new PDInsets(40, 50, 30, 50)),
                 new DefaultPDRowProvider(
                         PDBorderStyle.leftRightBorderOf(PDLineStyle.ofColor(4, Color.GREEN)),
-                        PDTableCell.DEFAULT_PADDING,
+                        PDTableTextCell.DEFAULT_PADDING,
                         (cellObj, col, row, page) -> ((PDTextLine[]) cellObj)[col],
                         PDBorderStyle.topBottomBorderOf(PDLineStyle.ofColor(Color.blue)),
                         null,
@@ -266,7 +266,7 @@ public class PDFGenTest {
         IPDRowProvider rowProvider = new DefaultLevelPDRowProvider(
                 new DefaultPDRowProvider(
                         PDBorderStyle.fullBorderOf(PDLineStyle.ofColor(6, Color.YELLOW)),
-                        PDTableCell.DEFAULT_PADDING,
+                        PDTableTextCell.DEFAULT_PADDING,
                         (cellObj, col, row, page) -> ((PDTextLine[]) cellObj)[col],
                         PDBorderStyle.leftRightBorderOf(PDLineStyle.ofColor(Color.MAGENTA)),
                         null,
@@ -274,7 +274,7 @@ public class PDFGenTest {
                 ),
                 new DefaultPDRowProvider(
                         PDBorderStyle.leftRightBorderOf(PDLineStyle.ofColor(4, Color.GREEN)),
-                        PDTableCell.DEFAULT_PADDING,
+                        PDTableTextCell.DEFAULT_PADDING,
                         (cellObj, col, row, page) -> ((PDTextLine[]) cellObj)[col],
                         PDBorderStyle.fullBorderOf(PDLineStyle.ofColor(Color.blue)),
                         null,
@@ -309,7 +309,7 @@ public class PDFGenTest {
         IPDRowProvider rowProvider = new DefaultLevelPDRowProvider(
                 new DefaultPDRowProvider(
                         PDBorderStyle.fullBorderOf(PDLineStyle.ofColor(8, Color.GRAY)),
-                        PDTableCell.DEFAULT_PADDING,
+                        PDTableTextCell.DEFAULT_PADDING,
                         (cellObj, col, row, page) -> ((PDTextLine[]) cellObj)[col],
                         PDBorderStyle.leftRightBorderOf(PDLineStyle.ofColor(Color.orange)),
                         Color.DARK_GRAY,
@@ -317,7 +317,7 @@ public class PDFGenTest {
                 ),
                 new DefaultPDRowProvider(
                         PDBorderStyle.fullBorderOf(PDLineStyle.ofColor(6, Color.YELLOW)),
-                        PDTableCell.DEFAULT_PADDING,
+                        PDTableTextCell.DEFAULT_PADDING,
                         (cellObj, col, row, page) -> ((PDTextLine[]) cellObj)[col],
                         PDBorderStyle.leftRightBorderOf(PDLineStyle.ofColor(Color.MAGENTA)),
                         Color.pink,
@@ -325,7 +325,7 @@ public class PDFGenTest {
                 ),
                 new DefaultPDRowProvider(
                         PDBorderStyle.leftRightBorderOf(PDLineStyle.ofColor(4, Color.GREEN)),
-                        PDTableCell.DEFAULT_PADDING,
+                        PDTableTextCell.DEFAULT_PADDING,
                         (cellObj, col, row, page) -> ((PDTextLine[]) cellObj)[col],
                         PDBorderStyle.fullBorderOf(PDLineStyle.ofColor(Color.blue)),
                         null,

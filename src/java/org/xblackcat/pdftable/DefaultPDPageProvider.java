@@ -17,7 +17,7 @@ public class DefaultPDPageProvider implements IPDPageProvider {
     private final PDInsets defaultPadding;
 
     public DefaultPDPageProvider(PDRectangle pageSize) {
-        this(pageSize, PDTableCell.DEFAULT_PADDING);
+        this(pageSize, PDTableTextCell.DEFAULT_PADDING);
     }
 
     public DefaultPDPageProvider(PDRectangle pageSize, PDInsets padding) {

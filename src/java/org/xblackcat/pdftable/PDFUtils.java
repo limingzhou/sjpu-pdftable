@@ -172,6 +172,26 @@ public class PDFUtils {
         return width;
     }
 
+    public static float totalHeight(IPDMeasurable... objects) throws IOException {
+        float height = 0;
+
+        for (IPDMeasurable m : objects) {
+            height += m.getHeight();
+        }
+
+        return height;
+    }
+
+    public static float totalWidth(IPDMeasurable... objects) throws IOException {
+        float width = 0;
+
+        for (IPDMeasurable m : objects) {
+            width += m.getWidth();
+        }
+
+        return width;
+    }
+
     public static PDRectangle getRowSize(IPDMeasurable... objects) throws IOException {
         float height = 0;
         float width = 0;
@@ -199,5 +219,4 @@ public class PDFUtils {
 
         return new PDRectangle(width, height);
     }
-
 }
