@@ -16,10 +16,10 @@ public class DefaultLevelPDRowProvider implements IPDRowProvider {
     }
 
     @Override
-    public PDTableRowDef getRowCellInfo(Object rowObject, int level, int row, int page) {
+    public PDTableRowDef getRowCellInfo(Object rowObject, int level, int groupRow, int row, int page) {
         if (level > rowStyles.length) {
-            return rowStyles[rowStyles.length - 1].getRowCellInfo(rowObject, level, row, page);
+            return rowStyles[rowStyles.length - 1].getRowCellInfo(rowObject, level, groupRow, row, page);
         }
-        return rowStyles[level].getRowCellInfo(rowObject, level, row, page);
+        return rowStyles[level].getRowCellInfo(rowObject, level, groupRow, row, page);
     }
 }

@@ -1,6 +1,8 @@
 package org.xblackcat.pdftable;
 
 import org.apache.pdfbox.pdmodel.PDDocument;
+import org.apache.pdfbox.pdmodel.PDPage;
+import org.apache.pdfbox.pdmodel.PDPageContentStream;
 import org.apache.pdfbox.pdmodel.common.PDRectangle;
 import org.apache.pdfbox.pdmodel.font.PDFont;
 import org.apache.pdfbox.pdmodel.font.PDType1Font;
@@ -330,7 +332,17 @@ public class PDFGenTest {
                         PDBorderStyle.leftRightBorderOf(PDLineStyle.ofColor(Color.MAGENTA)),
                         Color.pink,
                         200, 300, 200, 80
-                ),
+                ) {
+                    @Override
+                    public PDTableRowDef getRowCellInfo(Object rowObject, int level, int groupRow, int row, int page) {
+                        PDTableRowDef cellInfo = super.getRowCellInfo(rowObject, level, groupRow, row, page);
+                        if (groupRow % 2 == 0) {
+                            return cellInfo;
+                        } else {
+                            return new PDTableRowDef(cellInfo.getBorderStyle(), Color.orange, cellInfo.getCellDefs());
+                        }
+                    }
+                },
                 new DefaultPDRowProvider(
                         PDBorderStyle.leftRightBorderOf(PDLineStyle.ofColor(4, Color.GREEN)),
                         PDTableTextCell.DEFAULT_PADDING,
@@ -340,9 +352,9 @@ public class PDFGenTest {
                         200, 200, 100, 100, 100, 80
                 ) {
                     @Override
-                    public PDTableRowDef getRowCellInfo(Object rowObject, int level, int row, int page) {
-                        PDTableRowDef cellInfo = super.getRowCellInfo(rowObject, level, row, page);
-                        if (row % 2 == 0) {
+                    public PDTableRowDef getRowCellInfo(Object rowObject, int level, int groupRow, int row, int page) {
+                        PDTableRowDef cellInfo = super.getRowCellInfo(rowObject, level, groupRow, row, page);
+                        if (groupRow % 2 == 0) {
                             return cellInfo;
                         } else {
                             return new PDTableRowDef(cellInfo.getBorderStyle(), Color.lightGray, cellInfo.getCellDefs());
@@ -350,11 +362,27 @@ public class PDFGenTest {
                     }
                 }
         );
+        final PDRectangle pageSize = new PDRectangle(PDRectangle.A4.getHeight(), PDRectangle.A4.getWidth());
         PDFTable table = new PDFTable(
-                new DefaultPDPageProvider(
-                        new PDRectangle(PDRectangle.A4.getHeight(), PDRectangle.A4.getWidth()),
-                        new PDInsets(40, 50, 30, 50)
-                ),
+                new IPDPageProvider() {
+                    @Override
+                    public PDPageContentStream buildPage(PDDocument doc, int pageNum) throws IOException {
+                        final PDPage page = new PDPage(pageSize);
+                        doc.addPage(page);
+
+                        return new PDPageContentStream(doc, page, PDPageContentStream.AppendMode.APPEND, true, false);
+                    }
+
+                    @Override
+                    public PDInsets getDrawMargins(int pageNum) {
+                        return new PDInsets(40, 20 + 30 * (pageNum % 2), 30, 50 - 30 * (pageNum % 2));
+                    }
+
+                    @Override
+                    public PDRectangle getPageSize(int pageNum) {
+                        return pageSize;
+                    }
+                },
                 rowProvider,
                 PDBorderStyle.fullBorderOf(PDLineStyle.ofColor(2, Color.red)),
                 null

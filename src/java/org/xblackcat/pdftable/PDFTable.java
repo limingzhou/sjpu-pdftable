@@ -69,8 +69,9 @@ public class PDFTable {
         public void drawTable(DataGroup[] data) throws IOException {
             startNewPage();
 
+            int rowInGroup = 0;
             for (DataGroup g : data) {
-                drawGroup(g);
+                drawGroup(g, rowInGroup++);
             }
 
             if (stream != null) {
@@ -94,9 +95,9 @@ public class PDFTable {
             firstRowOnPage = true;
         }
 
-        private void drawGroup(DataGroup g) throws IOException {
+        private void drawGroup(DataGroup g, int groupRowIdx) throws IOException {
             Object valueObj = g.getKey();
-            PDTableRowDef rowInfo = rowProvider.getRowCellInfo(valueObj, headersStack.size(), curRow, curPage);
+            PDTableRowDef rowInfo = rowProvider.getRowCellInfo(valueObj, headersStack.size(), groupRowIdx, curRow, curPage);
             PDRenderedRow rr = preRenderedRow(valueObj, rowInfo);
             if (firstRowOnPage) {
                 firstRowOnPage = false;
@@ -124,8 +125,9 @@ public class PDFTable {
 
             if (ArrayUtils.isNotEmpty(g.getValues())) {
                 headersStack.addLast(rr);
+                int rowInGroup = 0;
                 for (DataGroup sg : g.getValues()) {
-                    drawGroup(sg);
+                    drawGroup(sg, rowInGroup++);
                 }
                 if (headersStack.removeLast() != rr) {
                     throw new IllegalStateException("Headers stack is broken!");
