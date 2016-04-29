@@ -148,4 +148,55 @@ public class PDTableTextCell extends APDTableCell {
             return Stream.of(lineParts).map(PDTextPart::getText).collect(Collectors.joining(""));
         }
     }
+
+    /**
+     * 22.04.2016 16:52
+     *
+     * @author xBlackCat
+     */
+    protected static class PDTextPart extends APDMeasurable {
+        private final CharSequence text;
+        private final PDTextStyle style;
+
+        public PDTextPart(CharSequence text, PDTextStyle style) {
+            if (style == null) {
+                throw new NullPointerException("Style should be set");
+            }
+            this.text = text;
+            this.style = style;
+        }
+
+        public String getText() {
+            return text.toString();
+        }
+
+        public PDTextStyle getStyle() {
+            return style;
+        }
+
+        @Override
+        protected float measureWidth() throws IOException {
+            final Float width;
+            try {
+                width = getStyle().getFont().getStringWidth(text.toString()) * getStyle().getFontSize() / 1000f;
+            } catch (IllegalArgumentException e) {
+                throw new IllegalArgumentException("Font: " + getStyle().getFont().getName(), e);
+            }
+            return width;
+        }
+
+        @Override
+        protected float measureHeight() {
+            return getStyle().getFont().getFontDescriptor().getFontBoundingBox().getHeight() / 1000 * getStyle().getFontSize();
+        }
+
+        @Override
+        public String toString() {
+            return getText();
+        }
+
+        public PDTextPart withText(CharSequence s) {
+            return new PDTextPart(s, getStyle());
+        }
+    }
 }

@@ -27,8 +27,8 @@ public class PDStyledString implements CharSequence {
         this.styleParts = styleParts;
     }
 
-    public PDTextPart[] getParts() {
-        return Stream.of(styleParts).map(p -> new PDTextPart(text.subSequence(p.beginIdx, p.endIdx), p.style)).toArray(PDTextPart[]::new);
+    public StylePart[] getStyle() {
+        return styleParts.clone();
     }
 
     public String getText() {
@@ -51,6 +51,10 @@ public class PDStyledString implements CharSequence {
         return getPdStyledSubstring(text, styleParts, start, end);
     }
 
+    @Override
+    public String toString() {
+        return getText();
+    }
 
     /**
      * Returns the index within this string of the first occurrence of
@@ -159,7 +163,6 @@ public class PDStyledString implements CharSequence {
         return -1;
     }
 
-
     public PDStyledString[] split(char separator) {
         int separatorIdx = indexOf(separator);
         if (separatorIdx == -1) {
@@ -218,7 +221,7 @@ public class PDStyledString implements CharSequence {
         return new PDStyledString(text, newParts.stream().toArray(StylePart[]::new));
     }
 
-    private final static class StylePart {
+    public final static class StylePart {
         private final int beginIdx;
         private final int endIdx;
         private final PDTextStyle style;
@@ -243,6 +246,18 @@ public class PDStyledString implements CharSequence {
 
         public StylePart cutTail(int idx) {
             return new StylePart(0, endIdx - idx, style);
+        }
+
+        public PDTextStyle getStyle() {
+            return style;
+        }
+
+        public int getEndIdx() {
+            return endIdx;
+        }
+
+        public int getBeginIdx() {
+            return beginIdx;
         }
     }
 

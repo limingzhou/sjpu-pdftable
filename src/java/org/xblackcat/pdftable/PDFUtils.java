@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.stream.Stream;
 
 /**
  * 11.04.2016 11:28
@@ -41,15 +42,22 @@ public class PDFUtils {
             lines.addAll(Arrays.asList(l.split('\n')));
         }
 
-        return lines.stream().map(PDStyledString::getParts).map(PDTableTextCell.CellLine::new).toArray(PDTableTextCell.CellLine[]::new);
+        return lines.stream().map(PDFUtils::getParts).map(PDTableTextCell.CellLine::new).toArray(PDTableTextCell.CellLine[]::new);
     }
+
+    protected static PDTableTextCell.PDTextPart[] getParts(PDStyledString text) {
+        return Stream.of(text.getStyle()).map(
+                p -> new PDTableTextCell.PDTextPart(text.getText().subSequence(p.getBeginIdx(), p.getEndIdx()), p.getStyle())
+        ).toArray(PDTableTextCell.PDTextPart[]::new);
+    }
+
 
     protected static Collection<PDTableTextCell.CellLine> wrapLine(float desiredWidth, PDStyledString textLine) throws IOException {
         Collection<PDTableTextCell.CellLine> lines = new ArrayList<>();
-        Collection<PDTextPart> currentLine = new ArrayList<>();
+        Collection<PDTableTextCell.PDTextPart> currentLine = new ArrayList<>();
 
         float offset = 0;
-        for (PDTextPart p : textLine.getParts()) {
+        for (PDTableTextCell.PDTextPart p : getParts(textLine)) {
             String text = p.getText();
             float stringWidth = p.getWidth();
 
@@ -59,7 +67,7 @@ public class PDFUtils {
                 continue;
             }
 
-            PDTextPart part = p;
+            PDTableTextCell.PDTextPart part = p;
             do {
                 int expectedIndex = Math.min((int) (text.length() * (desiredWidth - offset) / stringWidth), text.length());
                 int spaceIdx = text.lastIndexOf(' ', expectedIndex);
@@ -74,7 +82,7 @@ public class PDFUtils {
                 }
 
                 currentLine.add(part.withText(text.substring(0, cutIdx)));
-                lines.add(new PDTableTextCell.CellLine(currentLine.stream().toArray(PDTextPart[]::new)));
+                lines.add(new PDTableTextCell.CellLine(currentLine.stream().toArray(PDTableTextCell.PDTextPart[]::new)));
                 currentLine = new ArrayList<>();
 
                 text = text.substring(partIdx);
@@ -87,7 +95,7 @@ public class PDFUtils {
         }
 
         if (!currentLine.isEmpty()) {
-            lines.add(new PDTableTextCell.CellLine(currentLine.stream().toArray(PDTextPart[]::new)));
+            lines.add(new PDTableTextCell.CellLine(currentLine.stream().toArray(PDTableTextCell.PDTextPart[]::new)));
         }
         return lines;
     }
