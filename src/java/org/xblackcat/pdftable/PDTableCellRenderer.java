@@ -6,5 +6,5 @@ package org.xblackcat.pdftable;
  * @author xBlackCat
  */
 public interface PDTableCellRenderer {
-    PDTextLine getValue(Object cellObj, int col, int row, int page);
+    PDStyledString getValue(Object cellObj, int col, int row, int page);
 }

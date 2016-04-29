@@ -12,6 +12,7 @@ public class PDTableColumn {
     private final float width;
     private final PDInsets padding;
     private final Color background;
+    private final float textSpacing;
     private final PDTableCellRenderer renderer;
     private final PDBorderStyle cellBorderStyle;
 
@@ -23,10 +24,22 @@ public class PDTableColumn {
             PDTableCellRenderer renderer,
             PDBorderStyle cellBorderStyle
     ) {
+        this(idx, width, padding, background, 0, renderer, cellBorderStyle);
+    }
+
+    public PDTableColumn(
+            int idx,
+            float width,
+            PDInsets padding,
+            Color background,
+            float textSpacing, PDTableCellRenderer renderer,
+            PDBorderStyle cellBorderStyle
+    ) {
         this.idx = idx;
         this.width = width;
         this.padding = padding;
         this.background = background;
+        this.textSpacing = textSpacing;
         this.renderer = renderer;
         this.cellBorderStyle = cellBorderStyle;
     }
@@ -41,6 +54,10 @@ public class PDTableColumn {
 
     public Color getBackground() {
         return background;
+    }
+
+    public float getTextSpacing() {
+        return textSpacing;
     }
 
     public PDTableCellRenderer getRenderer() {

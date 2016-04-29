@@ -32,7 +32,8 @@ public class PDFTable {
             IPDPageProvider pageProvider,
             IPDRowProvider rowProvider,
             PDBorderStyle borderStyle,
-            Color background, int headersAmount
+            Color background,
+            int headersAmount
     ) {
         this.pageProvider = pageProvider;
         this.rowProvider = rowProvider;
@@ -195,14 +196,13 @@ public class PDFTable {
                 while (i < rowDef.length) {
                     PDTableColumn col = rowDef[i];
                     PDInsets padding = col.getPadding();
-                    final PDTextLine[] lines;
-                    PDTextLine value = col.getRenderer().getValue(valueObj, i, curRow, curPage);
+                    final PDTableTextCell cell;
+                    PDStyledString value = col.getRenderer().getValue(valueObj, i, curRow, curPage);
                     if (col.getWidth() >= 0) {
-                        lines = PDFUtils.toFixedWidthCell(col.getWidth() - padding.left - padding.right, value);
+                        cell = PDTableTextCell.toFixedWidthCell(col.getTextSpacing(), padding, col.getWidth(), value);
                     } else {
-                        lines = PDFUtils.toCell(value);
+                        cell = PDTableTextCell.toCell(col.getTextSpacing(), padding, value);
                     }
-                    PDTableTextCell cell = new PDTableTextCell(lines);
                     rowCells[i] = cell;
                     float cellHeight = cell.getHeight();
                     rowWidth += col.getWidth();
@@ -214,7 +214,6 @@ public class PDFTable {
             }
             return new PDRenderedRow(rowInfo, rowCells, rowHeight, rowWidth);
         }
-
     }
 
     public static Builder builder() {

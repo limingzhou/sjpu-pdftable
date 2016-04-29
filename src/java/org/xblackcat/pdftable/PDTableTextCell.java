@@ -4,6 +4,7 @@ import org.apache.pdfbox.pdmodel.PDPageContentStream;
 
 import java.awt.*;
 import java.io.IOException;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -12,25 +13,60 @@ import java.util.stream.Stream;
  * @author xBlackCat
  */
 public class PDTableTextCell extends APDTableCell {
+    public static PDTableTextCell toFixedWidthCell(PDInsets padding, float desiredWidth, PDStyledString... textLines) throws IOException {
+        return toFixedWidthCell(0, padding, desiredWidth, textLines);
+    }
+
+    public static PDTableTextCell toFixedWidthCell(float textSpacing, float desiredWidth, PDStyledString... textLines) throws IOException {
+        return toFixedWidthCell(textSpacing, DEFAULT_PADDING, desiredWidth, textLines);
+    }
+
+    public static PDTableTextCell toFixedWidthCell(float desiredWidth, PDStyledString... textLines) throws IOException {
+        return toFixedWidthCell(0, DEFAULT_PADDING, desiredWidth, textLines);
+    }
+
+    public static PDTableTextCell toFixedWidthCell(
+            float textSpacing,
+            PDInsets padding,
+            float desiredWidth,
+            PDStyledString... textLines
+    ) throws IOException {
+        return new PDTableTextCell(textSpacing, padding, PDFUtils.wrapLines(desiredWidth - padding.left - padding.right, textLines));
+    }
+
+    public static PDTableTextCell toCell(PDInsets padding, PDStyledString... textLines) throws IOException {
+        return toCell(0, padding, textLines);
+    }
+
+    public static PDTableTextCell toCell(float textSpacing, PDStyledString... textLines) throws IOException {
+        return toCell(textSpacing, DEFAULT_PADDING, textLines);
+    }
+
+    public static PDTableTextCell toCell(PDStyledString... textLines) throws IOException {
+        return toCell(0, DEFAULT_PADDING, textLines);
+    }
+
+    public static PDTableTextCell toCell(float textSpacing, PDInsets padding, PDStyledString... textLines) throws IOException {
+        return new PDTableTextCell(textSpacing, padding, PDFUtils.toCell(textLines));
+    }
+
     private final float textSpacing;
     private final CellLine[] lines;
 
-    public PDTableTextCell(PDTextLine... lines) {
+
+    public PDTableTextCell(CellLine... lines) {
         this(DEFAULT_PADDING, lines);
     }
 
-    public PDTableTextCell(PDInsets padding, PDTextLine... lines) {
+    public PDTableTextCell(PDInsets padding, CellLine... lines) {
         this(0, padding, lines);
     }
 
-    public PDTableTextCell(float textSpacing, PDTextLine... lines) {
-        this(textSpacing, DEFAULT_PADDING, lines);
-    }
 
-    public PDTableTextCell(float textSpacing, PDInsets padding, PDTextLine... lines) {
+    private PDTableTextCell(float textSpacing, PDInsets padding, CellLine... cellLines) {
         super(padding);
         this.textSpacing = textSpacing;
-        this.lines = Stream.of(lines).map(l -> new CellLine(l.getParts())).toArray(CellLine[]::new);
+        this.lines = cellLines;
     }
 
     @Override
@@ -55,11 +91,12 @@ public class PDTableTextCell extends APDTableCell {
             heightOffset -= lineHeight - textSpacing;
             float xx = x + getPadding().left;
             for (PDTextPart p : l.lineParts) {
-                if (!p.getColor().equals(c)) {
-                    c = p.getColor();
+                final PDTextStyle textStyle = p.getStyle();
+                if (!textStyle.getColor().equals(c)) {
+                    c = textStyle.getColor();
                     stream.setNonStrokingColor(c);
                 }
-                stream.setFont(p.getFont(), p.getFontSize());
+                stream.setFont(textStyle.getFont(), textStyle.getFontSize());
                 stream.beginText();
                 stream.newLineAtOffset(xx, heightOffset);
                 stream.showText(p.getText());
@@ -73,7 +110,6 @@ public class PDTableTextCell extends APDTableCell {
         return textSpacing;
     }
 
-    @Override
     public String getText() {
         StringBuilder text = new StringBuilder();
         for (CellLine l : lines) {
@@ -90,10 +126,10 @@ public class PDTableTextCell extends APDTableCell {
         return getText();
     }
 
-    private static final class CellLine extends APDMeasurable {
+    protected static final class CellLine extends APDMeasurable {
         private final PDTextPart[] lineParts;
 
-        private CellLine(PDTextPart... lineParts) {
+        protected CellLine(PDTextPart... lineParts) {
             this.lineParts = lineParts;
         }
 
@@ -105,6 +141,11 @@ public class PDTableTextCell extends APDTableCell {
         @Override
         protected float measureHeight() throws IOException {
             return PDFUtils.maxHeightOf((IPDMeasurable[]) lineParts);
+        }
+
+        @Override
+        public String toString() {
+            return Stream.of(lineParts).map(PDTextPart::getText).collect(Collectors.joining(""));
         }
     }
 }

@@ -24,6 +24,7 @@ import java.util.function.ToIntFunction;
  */
 public class PDFGenTest {
     private final Random rnd = new Random();
+    private final static PDTextStyle DEFAULT_STYLE = new PDTextStyle(Color.black, PDType1Font.TIMES_ROMAN, 12);
 
     public static URL getResource(String resourceName) throws MissingResourceException {
         URL url = PDFGenTest.class.getResource(resourceName);
@@ -106,24 +107,30 @@ public class PDFGenTest {
         return str.toString();
     }
 
-    private PDTextLine buildWordMultiFont(ToIntFunction<Random> wordsCount) {
+    private PDStyledString buildWordMultiFont(ToIntFunction<Random> wordsCount) {
         return buildWordMultiFont(wordsCount, rnd -> (rnd.nextFloat() * 6) + 7);
     }
 
-    private PDTextLine buildWordMultiFont(ToIntFunction<Random> wordsCount, ToDoubleFunction<Random> fontSize) {
+    private PDStyledString buildWordMultiFont(ToIntFunction<Random> wordsCount, ToDoubleFunction<Random> fontSize) {
+        PDStyledString.Builder builder = new PDStyledString.Builder(DEFAULT_STYLE);
         int words = wordsCount.applyAsInt(this.rnd);
-        PDTextPart[] parts = new PDTextPart[words + 1];
-        parts[0] = nextPart("", fontSize);
+        nextPart(builder, "", fontSize);
         while (words-- > 0) {
-            parts[words + 1] = nextPart(" ", fontSize);
+            nextPart(builder, " ", fontSize);
         }
 
-        return new PDTextLine(parts);
+        return builder.toStyledString();
     }
 
-    private PDTextPart nextPart(String s, ToDoubleFunction<Random> fontSize) {
+    private void nextPart(PDStyledString.Builder bldr, String s, ToDoubleFunction<Random> fontSize) {
+        final String text = s + WORDS[this.rnd.nextInt(WORDS.length)];
+        final PDTextStyle style = nextStyle(fontSize);
+        bldr.append(text, style);
+    }
+
+    private PDTextStyle nextStyle(ToDoubleFunction<Random> fontSize) {
         PDFont font = FONTS[rnd.nextInt(FONTS.length)];
-        return new PDTextPart(s + WORDS[this.rnd.nextInt(WORDS.length)], nextColor(), font, (float) fontSize.applyAsDouble(this.rnd));
+        return new PDTextStyle(nextColor(), font, (float) fontSize.applyAsDouble(this.rnd));
     }
 
     private Color nextColor() {
@@ -153,7 +160,7 @@ public class PDFGenTest {
 
         Collection<DataGroup> data = new ArrayList<>();
         for (int i = 0; i < rows; i++) {
-            PDTextLine[] row = new PDTextLine[cols];
+            PDStyledString[] row = new PDStyledString[cols];
             for (int j = 0; j < cols; j++) {
                 row[j] = buildWordMultiFont(rnd -> rnd.nextInt(5) + 3);
             }
@@ -170,7 +177,7 @@ public class PDFGenTest {
 
         Collection<DataGroup> data = new ArrayList<>();
         for (int i = 0; i < rows; i++) {
-            PDTextLine[] row = new PDTextLine[cols];
+            PDStyledString[] row = new PDStyledString[cols];
             for (int j = 0; j < cols; j++) {
                 row[j] = buildWordMultiFont(rnd -> rnd.nextInt(3) + 1, rnd -> (rnd.nextFloat() * 4) + 10);
             }
@@ -187,7 +194,7 @@ public class PDFGenTest {
 
         Collection<DataGroup> data = new ArrayList<>();
         for (int i = 0; i < rows; i++) {
-            PDTextLine[] row = new PDTextLine[cols];
+            PDStyledString[] row = new PDStyledString[cols];
             for (int j = 0; j < cols; j++) {
                 row[j] = buildWordMultiFont(rnd -> rnd.nextInt(2) + 1, rnd -> (rnd.nextFloat() * 4) + 14);
             }
@@ -202,6 +209,7 @@ public class PDFGenTest {
     public void generatePDF() throws IOException {
         DataGroup[] data = tableData();
 
+        final PDTextStyle style = new PDTextStyle(PDType1Font.TIMES_ROMAN, 8);
         PDFTable table = new PDFTable(
                 new DefaultPDPageProvider(PDRectangle.A4),
                 new DefaultPDRowProvider(
@@ -209,7 +217,7 @@ public class PDFGenTest {
                         PDTableTextCell.DEFAULT_PADDING,
                         (cellObj, col, row, page) -> {
                             String[] r = (String[]) cellObj;
-                            return PDTextLine.of(r[col], PDType1Font.TIMES_ROMAN, 8);
+                            return new PDStyledString(r[col], style);
                         },
                         PDBorderStyle.fullBorderOf(PDLineStyle.ofColor(Color.blue)),
                         null,
@@ -239,7 +247,7 @@ public class PDFGenTest {
                 new DefaultPDRowProvider(
                         PDBorderStyle.leftRightBorderOf(PDLineStyle.ofColor(4, Color.GREEN)),
                         PDTableTextCell.DEFAULT_PADDING,
-                        (cellObj, col, row, page) -> ((PDTextLine[]) cellObj)[col],
+                        (cellObj, col, row, page) -> ((PDStyledString[]) cellObj)[col],
                         PDBorderStyle.topBottomBorderOf(PDLineStyle.ofColor(Color.blue)),
                         null,
                         100, 100, 50, 50, 50, 50
@@ -267,7 +275,7 @@ public class PDFGenTest {
                 new DefaultPDRowProvider(
                         PDBorderStyle.fullBorderOf(PDLineStyle.ofColor(6, Color.YELLOW)),
                         PDTableTextCell.DEFAULT_PADDING,
-                        (cellObj, col, row, page) -> ((PDTextLine[]) cellObj)[col],
+                        (cellObj, col, row, page) -> ((PDStyledString[]) cellObj)[col],
                         PDBorderStyle.leftRightBorderOf(PDLineStyle.ofColor(Color.MAGENTA)),
                         null,
                         200, 300, 200, 80
@@ -275,7 +283,7 @@ public class PDFGenTest {
                 new DefaultPDRowProvider(
                         PDBorderStyle.leftRightBorderOf(PDLineStyle.ofColor(4, Color.GREEN)),
                         PDTableTextCell.DEFAULT_PADDING,
-                        (cellObj, col, row, page) -> ((PDTextLine[]) cellObj)[col],
+                        (cellObj, col, row, page) -> ((PDStyledString[]) cellObj)[col],
                         PDBorderStyle.fullBorderOf(PDLineStyle.ofColor(Color.blue)),
                         null,
                         200, 200, 100, 100, 100, 80
@@ -310,7 +318,7 @@ public class PDFGenTest {
                 new DefaultPDRowProvider(
                         PDBorderStyle.fullBorderOf(PDLineStyle.ofColor(8, Color.GRAY)),
                         PDTableTextCell.DEFAULT_PADDING,
-                        (cellObj, col, row, page) -> ((PDTextLine[]) cellObj)[col],
+                        (cellObj, col, row, page) -> ((PDStyledString[]) cellObj)[col],
                         PDBorderStyle.leftRightBorderOf(PDLineStyle.ofColor(Color.orange)),
                         Color.DARK_GRAY,
                         500, 280
@@ -318,7 +326,7 @@ public class PDFGenTest {
                 new DefaultPDRowProvider(
                         PDBorderStyle.fullBorderOf(PDLineStyle.ofColor(6, Color.YELLOW)),
                         PDTableTextCell.DEFAULT_PADDING,
-                        (cellObj, col, row, page) -> ((PDTextLine[]) cellObj)[col],
+                        (cellObj, col, row, page) -> ((PDStyledString[]) cellObj)[col],
                         PDBorderStyle.leftRightBorderOf(PDLineStyle.ofColor(Color.MAGENTA)),
                         Color.pink,
                         200, 300, 200, 80
@@ -326,7 +334,7 @@ public class PDFGenTest {
                 new DefaultPDRowProvider(
                         PDBorderStyle.leftRightBorderOf(PDLineStyle.ofColor(4, Color.GREEN)),
                         PDTableTextCell.DEFAULT_PADDING,
-                        (cellObj, col, row, page) -> ((PDTextLine[]) cellObj)[col],
+                        (cellObj, col, row, page) -> ((PDStyledString[]) cellObj)[col],
                         PDBorderStyle.fullBorderOf(PDLineStyle.ofColor(Color.blue)),
                         null,
                         200, 200, 100, 100, 100, 80

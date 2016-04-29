@@ -10,67 +10,48 @@ import java.io.IOException;
  *
  * @author xBlackCat
  */
-public class PDTextPart extends APDMeasurable implements ITextable {
-    private final String text;
-    private final Color color;
-    private final PDFont font;
-    private final float fontSize;
+public class PDTextPart extends APDMeasurable implements CharSequence {
+    private final CharSequence text;
+    private final PDTextStyle style;
+
+    public PDTextPart(CharSequence text, PDTextStyle style) {
+        if (style == null) {
+            throw new NullPointerException("Style should be set");
+        }
+        this.text = text;
+        this.style = style;
+    }
 
     public PDTextPart(String text, PDFont font, float fontSize) {
-        this(text, null, font, fontSize);
+        this(text, new PDTextStyle(font, fontSize));
     }
 
     public PDTextPart(String text, Color color, PDFont font, float fontSize) {
-        if (text == null) {
-            throw new NullPointerException("Can't create a text part from null string");
-        }
-        if (font == null) {
-            throw new NullPointerException("Font should be specified");
-        }
-        if (fontSize <= 0) {
-            throw new NullPointerException("Font size should be positive number");
-        }
-        if (color != null) {
-            this.color = color;
-        } else {
-            this.color = Color.black;
-        }
-        this.text = text;
-        this.font = font;
-        this.fontSize = fontSize;
+        this(text, new PDTextStyle(color, font, fontSize));
     }
 
-    @Override
     public String getText() {
-        return text;
+        return text.toString();
     }
 
-    public float getFontSize() {
-        return fontSize;
-    }
-
-    public PDFont getFont() {
-        return font;
-    }
-
-    public Color getColor() {
-        return color;
+    public PDTextStyle getStyle() {
+        return style;
     }
 
     @Override
     protected float measureWidth() throws IOException {
         final Float width;
         try {
-            width = font.getStringWidth(text) * fontSize / 1000f;
+            width = getStyle().getFont().getStringWidth(text.toString()) * getStyle().getFontSize() / 1000f;
         } catch (IllegalArgumentException e) {
-            throw new IllegalArgumentException("Font: " + font.getName(), e);
+            throw new IllegalArgumentException("Font: " + getStyle().getFont().getName(), e);
         }
         return width;
     }
 
     @Override
     protected float measureHeight() {
-        return font.getFontDescriptor().getFontBoundingBox().getHeight() / 1000 * fontSize;
+        return getStyle().getFont().getFontDescriptor().getFontBoundingBox().getHeight() / 1000 * getStyle().getFontSize();
     }
 
     @Override
@@ -78,15 +59,22 @@ public class PDTextPart extends APDMeasurable implements ITextable {
         return getText();
     }
 
-    public PDTextPart withFont(PDFont font) {
-        return new PDTextPart(getText(), getColor(), font, getFontSize());
+    public PDTextPart withText(CharSequence s) {
+        return new PDTextPart(s, getStyle());
     }
 
-    public PDTextPart withFontSize(float fontSize) {
-        return new PDTextPart(getText(), getColor(), getFont(), fontSize);
+    @Override
+    public int length() {
+        return getText().length();
     }
 
-    public PDTextPart withText(String s) {
-        return new PDTextPart(s, getColor(), getFont(), getFontSize());
+    @Override
+    public char charAt(int index) {
+        return getText().charAt(index);
+    }
+
+    @Override
+    public PDTextPart subSequence(int start, int end) {
+        return withText(text.subSequence(start, end));
     }
 }
