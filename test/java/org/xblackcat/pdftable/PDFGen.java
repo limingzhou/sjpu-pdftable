@@ -6,8 +6,6 @@ import org.apache.pdfbox.pdmodel.PDPageContentStream;
 import org.apache.pdfbox.pdmodel.common.PDRectangle;
 import org.apache.pdfbox.pdmodel.font.PDFont;
 import org.apache.pdfbox.pdmodel.font.PDType1Font;
-import org.junit.BeforeClass;
-import org.junit.Test;
 
 import java.awt.*;
 import java.io.*;
@@ -24,14 +22,14 @@ import java.util.function.ToIntFunction;
  *
  * @author xBlackCat
  */
-public class PDFGenTest {
+public class PDFGen {
     private final Random rnd = new Random();
     private final static PDTextStyle DEFAULT_STYLE = new PDTextStyle(Color.black, PDType1Font.TIMES_ROMAN, 12);
 
     public static URL getResource(String resourceName) throws MissingResourceException {
-        URL url = PDFGenTest.class.getResource(resourceName);
+        URL url = PDFGen.class.getResource(resourceName);
         if (url == null) {
-            url = PDFGenTest.class.getClassLoader().getResource(resourceName);
+            url = PDFGen.class.getClassLoader().getResource(resourceName);
         }
         if (url == null) {
             url = Thread.currentThread().getContextClassLoader().getResource(resourceName);
@@ -40,7 +38,7 @@ public class PDFGenTest {
             url = ClassLoader.getSystemResource(resourceName);
         }
         if (url == null) {
-            throw new MissingResourceException("Can not find resource " + resourceName, PDFGenTest.class.getName(), resourceName);
+            throw new MissingResourceException("Can not find resource " + resourceName, PDFGen.class.getName(), resourceName);
         }
 
         return url;
@@ -87,7 +85,6 @@ public class PDFGenTest {
             PDType1Font.COURIER_BOLD_OBLIQUE
     };
 
-    @BeforeClass
     public static void loadData() throws IOException {
         WORDS = loadListFromResource("/words.txt").stream().toArray(String[]::new);
     }
@@ -207,7 +204,6 @@ public class PDFGenTest {
         return data.stream().toArray(DataGroup[]::new);
     }
 
-    @Test
     public void generatePDF() throws IOException {
         DataGroup[] data = tableData();
 
@@ -240,7 +236,6 @@ public class PDFGenTest {
 
     }
 
-    @Test
     public void generatePDFMultiFont() throws IOException {
         DataGroup[] data = tableDataMultiFont();
 
@@ -269,7 +264,6 @@ public class PDFGenTest {
 
     }
 
-    @Test
     public void generatePDFMultiFontWithHeader() throws IOException {
         DataGroup[] data = tableDataMultiFontWithHeader();
 
@@ -312,7 +306,6 @@ public class PDFGenTest {
 
     }
 
-    @Test
     public void generatePDFMultiFontWithHeaders() throws IOException {
         DataGroup[] data = tableDataMultiFontWithHeaders();
 
@@ -397,5 +390,14 @@ public class PDFGenTest {
             os.flush();
         }
 
+    }
+
+    public static void main(String[] args) throws IOException {
+        loadData();
+
+//        new PDFGen().generatePDF();
+//        new PDFGen().generatePDFMultiFont();
+//        new PDFGen().generatePDFMultiFontWithHeader();
+        new PDFGen().generatePDFMultiFontWithHeaders();
     }
 }
