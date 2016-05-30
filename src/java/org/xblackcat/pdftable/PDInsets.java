@@ -53,7 +53,7 @@ public class PDInsets implements Cloneable, java.io.Serializable {
      * @param bottom the inset from the bottom.
      * @param right  the inset from the right.
      */
-    public PDInsets(int top, int left, int bottom, int right) {
+    public PDInsets(float top, float left, float bottom, float right) {
         this.top = top;
         this.left = left;
         this.bottom = bottom;
