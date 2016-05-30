@@ -7,41 +7,48 @@ import java.awt.*;
  *
  * @author xBlackCat
  */
-public class PDTableColumn {
+public class PDTableRowCellDef {
     private final int idx;
     private final float width;
     private final PDInsets padding;
     private final Color background;
     private final float textSpacing;
-    private final PDTableCellRenderer renderer;
+    private final PDTableCellTextGetter textGetter;
     private final PDBorderStyle cellBorderStyle;
+    private final HorizontalAlign horizontalTextAlign;
+    private final VerticalAlign verticalTextAlign;
 
-    public PDTableColumn(
+    public PDTableRowCellDef(
             int idx,
             float width,
             PDInsets padding,
             Color background,
-            PDTableCellRenderer renderer,
+            PDTableCellTextGetter textGetter,
             PDBorderStyle cellBorderStyle
     ) {
-        this(idx, width, padding, background, 0, renderer, cellBorderStyle);
+        this(idx, width, padding, background, 0, textGetter, cellBorderStyle, HorizontalAlign.Left, VerticalAlign.Top);
     }
 
-    public PDTableColumn(
+    public PDTableRowCellDef(
             int idx,
             float width,
             PDInsets padding,
             Color background,
-            float textSpacing, PDTableCellRenderer renderer,
-            PDBorderStyle cellBorderStyle
+            float textSpacing,
+            PDTableCellTextGetter textGetter,
+            PDBorderStyle cellBorderStyle,
+            HorizontalAlign horizontalTextAlign,
+            VerticalAlign verticalTextAlign
     ) {
         this.idx = idx;
         this.width = width;
         this.padding = padding;
         this.background = background;
         this.textSpacing = textSpacing;
-        this.renderer = renderer;
+        this.textGetter = textGetter;
         this.cellBorderStyle = cellBorderStyle;
+        this.horizontalTextAlign = horizontalTextAlign;
+        this.verticalTextAlign = verticalTextAlign;
     }
 
     public int getIdx() {
@@ -60,8 +67,8 @@ public class PDTableColumn {
         return textSpacing;
     }
 
-    public PDTableCellRenderer getRenderer() {
-        return renderer;
+    public PDTableCellTextGetter getTextGetter() {
+        return textGetter;
     }
 
     public PDInsets getPadding() {
@@ -70,5 +77,13 @@ public class PDTableColumn {
 
     public PDBorderStyle getCellBorderStyle() {
         return cellBorderStyle;
+    }
+
+    public HorizontalAlign getHorizontalTextAlign() {
+        return horizontalTextAlign;
+    }
+
+    public VerticalAlign getVerticalTextAlign() {
+        return verticalTextAlign;
     }
 }

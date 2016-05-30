@@ -5,6 +5,6 @@ package org.xblackcat.pdftable;
  *
  * @author xBlackCat
  */
-public interface PDTableCellRenderer {
+public interface PDTableCellTextGetter {
     PDStyledString getValue(Object cellObj, int col, int row, int page);
 }

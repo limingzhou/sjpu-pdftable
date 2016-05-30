@@ -97,7 +97,7 @@ public class PDFTable {
 
         private void drawGroup(DataGroup g, int groupRowIdx) throws IOException {
             Object valueObj = g.getKey();
-            PDTableRowDef rowInfo = rowProvider.getRowCellInfo(valueObj, headersStack.size(), groupRowIdx, curRow, curPage);
+            PDTableRowDef rowInfo = rowProvider.getRowDefinition(valueObj, headersStack.size(), groupRowIdx, curRow, curPage);
             PDRenderedRow rr = preRenderedRow(valueObj, rowInfo);
             if (firstRowOnPage) {
                 firstRowOnPage = false;
@@ -151,7 +151,7 @@ public class PDFTable {
             float x = curPageDrawMargins.left;
             for (int i = 0; i < rr.rowCells.length; i++) {
                 final IPDTableCell cell = rr.rowCells[i];
-                PDTableColumn rowCelDef = rr.rowInfo.getCellDefs()[i];
+                PDTableRowCellDef rowCelDef = rr.rowInfo.getCellDefs()[i];
                 drawCellBackground(x, drawY, rowCelDef.getWidth(), rr.rowHeight, rr.rowInfo.getBackground(), rowCelDef.getBackground());
 
                 cell.drawCell(stream, x, drawY);
@@ -189,17 +189,17 @@ public class PDFTable {
         }
 
         private PDRenderedRow preRenderedRow(Object valueObj, PDTableRowDef rowInfo) throws IOException {
-            PDTableColumn[] rowDef = rowInfo.getCellDefs();
+            PDTableRowCellDef[] rowDef = rowInfo.getCellDefs();
             PDTableTextCell[] rowCells = new PDTableTextCell[rowDef.length];
             float rowHeight = 0;
             float rowWidth = 0;
             {
                 int i = 0;
                 while (i < rowDef.length) {
-                    PDTableColumn col = rowDef[i];
+                    PDTableRowCellDef col = rowDef[i];
                     PDInsets padding = col.getPadding();
                     final PDTableTextCell cell;
-                    PDStyledString value = col.getRenderer().getValue(valueObj, i, curRow, curPage);
+                    PDStyledString value = col.getTextGetter().getValue(valueObj, i, curRow, curPage);
                     if (col.getWidth() >= 0) {
                         cell = PDTableTextCell.toFixedWidthCell(col.getTextSpacing(), padding, col.getWidth(), value);
                     } else {
@@ -223,7 +223,7 @@ public class PDFTable {
     }
 
     public static class Builder {
-        private final List<PDTableColumn> columns = new ArrayList<>();
+        private final List<PDTableRowCellDef> columns = new ArrayList<>();
 
         private Builder() {
         }

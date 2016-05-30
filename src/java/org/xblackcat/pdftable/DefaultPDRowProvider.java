@@ -9,12 +9,12 @@ import java.awt.*;
  */
 public class DefaultPDRowProvider implements IPDRowProvider {
     private final Color background;
-    private final PDTableColumn[] columns;
+    private final PDTableRowCellDef[] columns;
     private final PDBorderStyle rowBorderStyle;
 
     public DefaultPDRowProvider(
             PDInsets padding,
-            PDTableCellRenderer renderer,
+            PDTableCellTextGetter renderer,
             PDBorderStyle cellBorderStyle,
             Color background,
             float... widths
@@ -25,27 +25,27 @@ public class DefaultPDRowProvider implements IPDRowProvider {
     public DefaultPDRowProvider(
             PDBorderStyle rowBorderStyle,
             PDInsets padding,
-            PDTableCellRenderer renderer,
+            PDTableCellTextGetter renderer,
             PDBorderStyle cellBorderStyle,
             Color background,
             float... widths
     ) {
         this.rowBorderStyle = rowBorderStyle;
         this.background = background;
-        columns = new PDTableColumn[widths.length];
+        columns = new PDTableRowCellDef[widths.length];
         int i = 0;
         while (i < columns.length) {
-            columns[i] = new PDTableColumn(i, widths[i], padding, null, renderer, cellBorderStyle);
+            columns[i] = new PDTableRowCellDef(i, widths[i], padding, null, renderer, cellBorderStyle);
             i++;
         }
     }
 
     @Override
-    public PDTableRowDef getRowCellInfo(Object rowObject, int level, int groupRow, int row, int page) {
+    public PDTableRowDef getRowDefinition(Object rowObject, int level, int groupRow, int row, int page) {
         return new PDTableRowDef(rowBorderStyle, background, columns);
     }
 
-    public PDTableColumn[] getColumns() {
+    public PDTableRowCellDef[] getColumns() {
         return columns;
     }
 

@@ -10,31 +10,41 @@ import java.awt.*;
 public class PDTableRowDef {
     private final PDBorderStyle borderStyle;
     private final Color background;
-    private final PDTableColumn cellDefs[];
+    private final PDTableRowCellDef cellDefs[];
 
-    public PDTableRowDef(PDBorderStyle borderStyle, PDTableColumn... cellDefs) {
+    public PDTableRowDef(PDBorderStyle borderStyle, PDTableRowCellDef... cellDefs) {
         this(borderStyle, null, cellDefs);
     }
 
-    public PDTableRowDef(PDTableColumn... cellDefs) {
+    public PDTableRowDef(PDTableRowCellDef... cellDefs) {
         this(null, null, cellDefs);
     }
 
-    public PDTableRowDef(PDBorderStyle borderStyle, Color background, PDTableColumn... cellDefs) {
+    public PDTableRowDef(PDBorderStyle borderStyle, Color background, PDTableRowCellDef... cellDefs) {
         this.borderStyle = borderStyle;
         this.cellDefs = cellDefs;
         this.background = background;
     }
 
+    /**
+     * Border style of the whole row. Row border is painted after cell row borders.
+     *
+     * @return row border style
+     */
     public PDBorderStyle getBorderStyle() {
         return borderStyle;
     }
 
+    /**
+     * Whole row background. Could be overridden by cell background
+     *
+     * @return row background.
+     */
     public Color getBackground() {
         return background;
     }
 
-    public PDTableColumn[] getCellDefs() {
+    public PDTableRowCellDef[] getCellDefs() {
         return cellDefs;
     }
 }

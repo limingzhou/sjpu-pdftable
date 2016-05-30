@@ -327,8 +327,8 @@ public class PDFGen {
                         200, 300, 200, 80
                 ) {
                     @Override
-                    public PDTableRowDef getRowCellInfo(Object rowObject, int level, int groupRow, int row, int page) {
-                        PDTableRowDef cellInfo = super.getRowCellInfo(rowObject, level, groupRow, row, page);
+                    public PDTableRowDef getRowDefinition(Object rowObject, int level, int groupRow, int row, int page) {
+                        PDTableRowDef cellInfo = super.getRowDefinition(rowObject, level, groupRow, row, page);
                         if (groupRow % 2 == 0) {
                             return cellInfo;
                         } else {
@@ -345,8 +345,8 @@ public class PDFGen {
                         200, 200, 100, 100, 100, 80
                 ) {
                     @Override
-                    public PDTableRowDef getRowCellInfo(Object rowObject, int level, int groupRow, int row, int page) {
-                        PDTableRowDef cellInfo = super.getRowCellInfo(rowObject, level, groupRow, row, page);
+                    public PDTableRowDef getRowDefinition(Object rowObject, int level, int groupRow, int row, int page) {
+                        PDTableRowDef cellInfo = super.getRowDefinition(rowObject, level, groupRow, row, page);
                         if (groupRow % 2 == 0) {
                             return cellInfo;
                         } else {
