@@ -10,17 +10,17 @@ import java.awt.*;
 public class PDTableRowDef {
     private final PDBorderStyle borderStyle;
     private final Color background;
-    private final PDTableRowCellDef cellDefs[];
+    private final PDTableTextCellDef cellDefs[];
 
-    public PDTableRowDef(PDBorderStyle borderStyle, PDTableRowCellDef... cellDefs) {
+    public PDTableRowDef(PDBorderStyle borderStyle, PDTableTextCellDef... cellDefs) {
         this(borderStyle, null, cellDefs);
     }
 
-    public PDTableRowDef(PDTableRowCellDef... cellDefs) {
+    public PDTableRowDef(PDTableTextCellDef... cellDefs) {
         this(null, null, cellDefs);
     }
 
-    public PDTableRowDef(PDBorderStyle borderStyle, Color background, PDTableRowCellDef... cellDefs) {
+    public PDTableRowDef(PDBorderStyle borderStyle, Color background, PDTableTextCellDef... cellDefs) {
         this.borderStyle = borderStyle;
         this.cellDefs = cellDefs;
         this.background = background;
@@ -44,7 +44,7 @@ public class PDTableRowDef {
         return background;
     }
 
-    public PDTableRowCellDef[] getCellDefs() {
+    public PDTableTextCellDef[] getCellDefs() {
         return cellDefs;
     }
 }

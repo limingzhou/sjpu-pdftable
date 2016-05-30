@@ -14,58 +14,98 @@ import java.util.stream.Stream;
  */
 public class PDTableTextCell extends APDTableCell {
     public static PDTableTextCell toFixedWidthCell(PDInsets padding, float desiredWidth, PDStyledString... textLines) throws IOException {
-        return toFixedWidthCell(0, padding, desiredWidth, textLines);
+        return toFixedWidthCell(0, padding, desiredWidth, HorizontalAlign.Left, VerticalAlign.Top, VerticalAlign.Bottom, textLines);
     }
 
     public static PDTableTextCell toFixedWidthCell(float textSpacing, float desiredWidth, PDStyledString... textLines) throws IOException {
-        return toFixedWidthCell(textSpacing, DEFAULT_PADDING, desiredWidth, textLines);
+        return toFixedWidthCell(
+                textSpacing,
+                DEFAULT_PADDING,
+                desiredWidth,
+                HorizontalAlign.Left,
+                VerticalAlign.Bottom,
+                VerticalAlign.Top,
+                textLines
+        );
     }
 
     public static PDTableTextCell toFixedWidthCell(float desiredWidth, PDStyledString... textLines) throws IOException {
-        return toFixedWidthCell(0, DEFAULT_PADDING, desiredWidth, textLines);
+        return toFixedWidthCell(0, DEFAULT_PADDING, desiredWidth, HorizontalAlign.Left, VerticalAlign.Top, VerticalAlign.Bottom, textLines);
     }
 
     public static PDTableTextCell toFixedWidthCell(
             float textSpacing,
             PDInsets padding,
             float desiredWidth,
+            HorizontalAlign horizontalTextAlign,
+            VerticalAlign verticalTextAlign,
+            VerticalAlign verticalTextLineAlign,
             PDStyledString... textLines
     ) throws IOException {
-        return new PDTableTextCell(textSpacing, padding, PDFUtils.wrapLines(desiredWidth - padding.left - padding.right, textLines));
+        return new PDTableTextCell(
+                desiredWidth,
+                textSpacing,
+                padding,
+                horizontalTextAlign,
+                verticalTextAlign,
+                verticalTextLineAlign,
+                PDFUtils.wrapLines(desiredWidth - padding.left - padding.right, textLines)
+        );
     }
 
     public static PDTableTextCell toCell(PDInsets padding, PDStyledString... textLines) throws IOException {
-        return toCell(0, padding, textLines);
+        return toCell(0, padding, HorizontalAlign.Left, VerticalAlign.Top, VerticalAlign.Bottom, textLines);
     }
 
     public static PDTableTextCell toCell(float textSpacing, PDStyledString... textLines) throws IOException {
-        return toCell(textSpacing, DEFAULT_PADDING, textLines);
+        return toCell(textSpacing, DEFAULT_PADDING, HorizontalAlign.Left, VerticalAlign.Top, VerticalAlign.Bottom, textLines);
     }
 
     public static PDTableTextCell toCell(PDStyledString... textLines) throws IOException {
-        return toCell(0, DEFAULT_PADDING, textLines);
+        return toCell(0, DEFAULT_PADDING, HorizontalAlign.Left, VerticalAlign.Top, VerticalAlign.Bottom, textLines);
     }
 
-    public static PDTableTextCell toCell(float textSpacing, PDInsets padding, PDStyledString... textLines) throws IOException {
-        return new PDTableTextCell(textSpacing, padding, PDFUtils.toCell(textLines));
+    public static PDTableTextCell toCell(
+            float textSpacing,
+            PDInsets padding,
+            HorizontalAlign horizontalTextAlign,
+            VerticalAlign verticalTextAlign,
+            VerticalAlign verticalTextLineAlign,
+            PDStyledString... textLines
+    ) throws IOException {
+        return new PDTableTextCell(
+                0,
+                textSpacing,
+                padding,
+                horizontalTextAlign,
+                verticalTextAlign,
+                verticalTextLineAlign,
+                PDFUtils.toCell(textLines)
+        );
     }
 
+    private final float desiredWidth;
     private final float textSpacing;
     private final CellLine[] lines;
+    private final HorizontalAlign horizontalTextAlign;
+    private final VerticalAlign verticalTextAlign;
+    private final VerticalAlign verticalTextLineAlign;
 
-
-    public PDTableTextCell(CellLine... lines) {
-        this(DEFAULT_PADDING, lines);
-    }
-
-    public PDTableTextCell(PDInsets padding, CellLine... lines) {
-        this(0, padding, lines);
-    }
-
-
-    private PDTableTextCell(float textSpacing, PDInsets padding, CellLine... cellLines) {
+    public PDTableTextCell(
+            float desiredWidth,
+            float textSpacing,
+            PDInsets padding,
+            HorizontalAlign horizontalTextAlign,
+            VerticalAlign verticalTextAlign,
+            VerticalAlign verticalTextLineAlign,
+            CellLine... cellLines
+    ) {
         super(padding);
+        this.desiredWidth = desiredWidth;
         this.textSpacing = textSpacing;
+        this.horizontalTextAlign = horizontalTextAlign;
+        this.verticalTextAlign = verticalTextAlign;
+        this.verticalTextLineAlign = verticalTextLineAlign;
         this.lines = cellLines;
     }
 
@@ -80,16 +120,30 @@ public class PDTableTextCell extends APDTableCell {
     }
 
     @Override
-    public void drawCell(PDPageContentStream stream, float x, float y) throws IOException {
+    public void drawCell(PDPageContentStream stream, float x, float y, float rowHeight) throws IOException {
         Color c = null;
-        float textSpacing = getTextSpacing();
+        float heightOffset = y + getTextSpacing();
+        switch (verticalTextAlign) {
+            case Bottom:
+                heightOffset -= rowHeight - getHeight();
+                break;
+            case Center:
+                heightOffset -= (rowHeight - getHeight()) / 2;
+                break;
+            case Top:
+                heightOffset -= getPadding().top;
+                break;
+        }
 
-        float heightOffset = y - getPadding().top + textSpacing;
+        final IOffsetAdjuster vOA = getLineVerticalOffsetAdjuster();
+        final IOffsetAdjuster hOA = getHorizontalOffsetAdjuster();
 
         for (CellLine l : lines) {
             float lineHeight = l.getHeight();
-            heightOffset -= lineHeight - textSpacing;
-            float xx = x + getPadding().left;
+            float lineWidth = l.getWidth();
+
+            heightOffset -= lineHeight + getTextSpacing();
+            float xx = x + getPadding().left + hOA.measureOffset(getInnerWidth(), lineWidth);
             for (PDTextPart p : l.lineParts) {
                 final PDTextStyle textStyle = p.getStyle();
                 if (!textStyle.getColor().equals(c)) {
@@ -98,12 +152,41 @@ public class PDTableTextCell extends APDTableCell {
                 }
                 stream.setFont(textStyle.getFont(), textStyle.getFontSize());
                 stream.beginText();
-                stream.newLineAtOffset(xx, heightOffset);
+                stream.newLineAtOffset(xx, heightOffset + vOA.measureOffset(lineHeight, p.getHeight()));
                 stream.showText(p.getText());
                 stream.endText();
                 xx += p.getWidth();
             }
         }
+    }
+
+    protected IOffsetAdjuster getHorizontalOffsetAdjuster() {
+        switch (horizontalTextAlign) {
+            case Center:
+                return (t, i) -> (t - i) / 2;
+            case Right:
+                return (t, i) -> t - i;
+            case Left:
+            case Justify:
+            default:
+                return (t, i) -> 0;
+        }
+    }
+
+    protected IOffsetAdjuster getLineVerticalOffsetAdjuster() {
+        switch (verticalTextLineAlign) {
+            case Top:
+                return (t, i) -> t - i;
+            case Center:
+                return (t, i) -> (t - i) / 2;
+            case Bottom:
+            default:
+                return (t, i) -> 0;
+        }
+    }
+
+    public float getInnerWidth() throws IOException {
+        return (desiredWidth == 0 ? getWidth() : desiredWidth) - getPadding().left - getPadding().right;
     }
 
     public float getTextSpacing() {

@@ -151,10 +151,10 @@ public class PDFTable {
             float x = curPageDrawMargins.left;
             for (int i = 0; i < rr.rowCells.length; i++) {
                 final IPDTableCell cell = rr.rowCells[i];
-                PDTableRowCellDef rowCelDef = rr.rowInfo.getCellDefs()[i];
+                APDTableCellDef rowCelDef = rr.rowInfo.getCellDefs()[i];
                 drawCellBackground(x, drawY, rowCelDef.getWidth(), rr.rowHeight, rr.rowInfo.getBackground(), rowCelDef.getBackground());
 
-                cell.drawCell(stream, x, drawY);
+                cell.drawCell(stream, x, drawY, rr.rowHeight);
                 PDBorderStyle borderStyle = rowCelDef.getCellBorderStyle();
                 if (borderStyle != null) {
                     borderStyle.applyToStream(stream, x, drawY, rowCelDef.getWidth(), rr.rowHeight);
@@ -189,26 +189,20 @@ public class PDFTable {
         }
 
         private PDRenderedRow preRenderedRow(Object valueObj, PDTableRowDef rowInfo) throws IOException {
-            PDTableRowCellDef[] rowDef = rowInfo.getCellDefs();
-            PDTableTextCell[] rowCells = new PDTableTextCell[rowDef.length];
+            APDTableCellDef[] rowDef = rowInfo.getCellDefs();
+            IPDTableCell[] rowCells = new IPDTableCell[rowDef.length];
             float rowHeight = 0;
             float rowWidth = 0;
             {
                 int i = 0;
                 while (i < rowDef.length) {
-                    PDTableRowCellDef col = rowDef[i];
-                    PDInsets padding = col.getPadding();
-                    final PDTableTextCell cell;
-                    PDStyledString value = col.getTextGetter().getValue(valueObj, i, curRow, curPage);
-                    if (col.getWidth() >= 0) {
-                        cell = PDTableTextCell.toFixedWidthCell(col.getTextSpacing(), padding, col.getWidth(), value);
-                    } else {
-                        cell = PDTableTextCell.toCell(col.getTextSpacing(), padding, value);
-                    }
+                    APDTableCellDef col = rowDef[i];
+                    final IPDTableCell cell = col.buildCell(valueObj, i, curRow, curPage);
                     rowCells[i] = cell;
-                    float cellHeight = cell.getHeight();
-                    rowWidth += col.getWidth();
                     i++;
+
+                    float cellHeight = cell.getHeight();
+                    rowWidth += Math.max(col.getWidth(), cell.getWidth());
                     if (rowHeight < cellHeight) {
                         rowHeight = cellHeight;
                     }
@@ -223,7 +217,7 @@ public class PDFTable {
     }
 
     public static class Builder {
-        private final List<PDTableRowCellDef> columns = new ArrayList<>();
+        private final List<APDTableCellDef> columns = new ArrayList<>();
 
         private Builder() {
         }
@@ -242,7 +236,7 @@ public class PDFTable {
         private final float rowHeight;
         private final float rowWidth;
 
-        PDRenderedRow(PDTableRowDef rowInfo, PDTableTextCell[] rowCells, float rowHeight, float rowWidth) {
+        PDRenderedRow(PDTableRowDef rowInfo, IPDTableCell[] rowCells, float rowHeight, float rowWidth) {
             this.rowInfo = rowInfo;
             this.rowCells = rowCells;
             this.rowHeight = rowHeight;

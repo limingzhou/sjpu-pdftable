@@ -9,7 +9,7 @@ import java.awt.*;
  */
 public class DefaultPDRowProvider implements IPDRowProvider {
     private final Color background;
-    private final PDTableRowCellDef[] columns;
+    private final PDTableTextCellDef[] columns;
     private final PDBorderStyle rowBorderStyle;
 
     public DefaultPDRowProvider(
@@ -32,10 +32,21 @@ public class DefaultPDRowProvider implements IPDRowProvider {
     ) {
         this.rowBorderStyle = rowBorderStyle;
         this.background = background;
-        columns = new PDTableRowCellDef[widths.length];
+        columns = new PDTableTextCellDef[widths.length];
         int i = 0;
         while (i < columns.length) {
-            columns[i] = new PDTableRowCellDef(i, widths[i], padding, null, renderer, cellBorderStyle);
+            columns[i] = new PDTableTextCellDef(
+                    i,
+                    widths[i],
+                    padding,
+                    null,
+                    0,
+                    renderer,
+                    cellBorderStyle,
+                    HorizontalAlign.values()[i % 4],
+                    VerticalAlign.values()[i % 3],
+                    VerticalAlign.Bottom
+            );
             i++;
         }
     }
@@ -45,7 +56,7 @@ public class DefaultPDRowProvider implements IPDRowProvider {
         return new PDTableRowDef(rowBorderStyle, background, columns);
     }
 
-    public PDTableRowCellDef[] getColumns() {
+    public APDTableCellDef[] getColumns() {
         return columns;
     }
 

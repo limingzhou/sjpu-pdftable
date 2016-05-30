@@ -10,7 +10,7 @@ import java.io.IOException;
  * @author xBlackCat
  */
 public interface IPDTableCell extends IPDMeasurable {
-    void drawCell(PDPageContentStream stream, float x, float y) throws IOException;
+    void drawCell(PDPageContentStream stream, float x, float y, float rowHeight) throws IOException;
 
     PDInsets getPadding();
 }
