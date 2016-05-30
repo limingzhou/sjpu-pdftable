@@ -69,19 +69,29 @@ public class PDFUtils {
 
             PDTableTextCell.PDTextPart part = p;
             do {
+                PDTableTextCell.PDTextPart textPart;
                 int expectedIndex = Math.min((int) (text.length() * (desiredWidth - offset) / stringWidth), text.length());
-                int spaceIdx = text.lastIndexOf(' ', expectedIndex);
-                final int cutIdx;
-                final int partIdx;
-                if (spaceIdx < 0) {
-                    cutIdx = expectedIndex;
-                    partIdx = expectedIndex;
-                } else {
-                    cutIdx = spaceIdx;
-                    partIdx = spaceIdx + 1;
+                int partIdx;
+                do {
+                    int spaceIdx = text.lastIndexOf(' ', expectedIndex);
+                    final int cutIdx;
+                    if (spaceIdx < 0) {
+                        cutIdx = expectedIndex;
+                        partIdx = expectedIndex;
+                    } else {
+                        cutIdx = spaceIdx;
+                        partIdx = spaceIdx;
+                    }
+
+                    textPart = part.withText(text.substring(0, cutIdx));
+                    expectedIndex--;
+                } while (textPart.getWidth() > desiredWidth - offset);
+
+                while (partIdx < text.length() && Character.isSpaceChar(text.charAt(partIdx))) {
+                    partIdx++;
                 }
 
-                currentLine.add(part.withText(text.substring(0, cutIdx)));
+                currentLine.add(textPart);
                 lines.add(new PDTableTextCell.CellLine(currentLine.stream().toArray(PDTableTextCell.PDTextPart[]::new)));
                 currentLine = new ArrayList<>();
 

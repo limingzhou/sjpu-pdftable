@@ -90,8 +90,23 @@ public class PDFUtilsTest {
                             "I am trying to create a PDF file",
                             "with a lot of text contents in the",
                             "document with one",
-                            "very_long_unbreakable_word_to_sp",
-                            "lit_it. I am using PDFBox"
+                            "very_long_unbreakable_word_to_",
+                            "split_it. I am using PDFBox"
+                    },
+                    Stream.of(strings).map(PDTableTextCell.CellLine::toString).toArray(String[]::new)
+            );
+        }
+        {
+            String text1 = "WWWWWWWWWWWWWWWW WWWWWWWWWWWWWWWWWWWWWWWWWWWWW WWW - Day 123456789W";
+            final PDTableTextCell.CellLine[] strings = PDFUtils.wrapLines(255, new PDStyledString(
+                    text1,
+                    new PDTextStyle(PDType1Font.HELVETICA, 9)
+            ));
+            Assert.assertArrayEquals(
+                    new String[]{
+                            "WWWWWWWWWWWWWWWW",
+                            "WWWWWWWWWWWWWWWWWWWWWWWWWWWWW",
+                            "WWW - Day 123456789W"
                     },
                     Stream.of(strings).map(PDTableTextCell.CellLine::toString).toArray(String[]::new)
             );
