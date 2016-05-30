@@ -11,6 +11,7 @@ import java.util.ArrayList;
 import java.util.Deque;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.stream.Stream;
 
 /**
  * 22.04.2016 16:52
@@ -64,6 +65,10 @@ public class PDFTable {
 
         private Drawer(PDDocument doc) {
             this.doc = doc;
+        }
+
+        public void drawTable(Object... data) throws IOException {
+            drawTable(Stream.of(data).map(v -> new DataGroup(v)).toArray(DataGroup[]::new));
         }
 
         public void drawTable(DataGroup[] data) throws IOException {
