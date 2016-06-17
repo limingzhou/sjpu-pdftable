@@ -10,7 +10,7 @@ import java.util.stream.Stream;
  */
 public class PDStyledString implements CharSequence {
     private final CharSequence text;
-    private final StylePart[] styleParts;
+    final StylePart[] styleParts;
 
     public PDStyledString(CharSequence str, PDTextStyle style) {
         this(str, new StylePart(0, str.length(), style));
@@ -226,7 +226,7 @@ public class PDStyledString implements CharSequence {
         private final int endIdx;
         private final PDTextStyle style;
 
-        private StylePart(int beginIdx, int endIdx, PDTextStyle style) {
+        StylePart(int beginIdx, int endIdx, PDTextStyle style) {
             this.beginIdx = beginIdx;
             this.endIdx = endIdx;
             this.style = style;
@@ -237,7 +237,7 @@ public class PDStyledString implements CharSequence {
         }
 
         public StylePart enlarge(int sizeShift) {
-            return new StylePart(beginIdx, sizeShift + sizeShift, style);
+            return new StylePart(beginIdx, endIdx + sizeShift, style);
         }
 
         public StylePart cutHead(int idx) {
@@ -246,6 +246,13 @@ public class PDStyledString implements CharSequence {
 
         public StylePart cutTail(int idx) {
             return new StylePart(0, endIdx - idx, style);
+        }
+
+        public StylePart setEnd(int endIdx) {
+            if (endIdx <= beginIdx) {
+                throw new IllegalArgumentException("End index should be greater than begin index");
+            }
+            return new StylePart(beginIdx, endIdx, style);
         }
 
         public PDTextStyle getStyle() {
@@ -259,11 +266,31 @@ public class PDStyledString implements CharSequence {
         public int getBeginIdx() {
             return beginIdx;
         }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            final StylePart stylePart = (StylePart) o;
+            return beginIdx == stylePart.beginIdx &&
+                    endIdx == stylePart.endIdx &&
+                    Objects.equals(style, stylePart.style);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(beginIdx, endIdx, style);
+        }
+
+        @Override
+        public String toString() {
+            return "[" + beginIdx + ", " + endIdx + ") for style " + style;
+        }
     }
 
     public final static class Builder implements Appendable, CharSequence {
-        private final StringBuilder str = new StringBuilder();
-        private final List<StylePart> parts = new ArrayList<>();
+        final StringBuilder str = new StringBuilder();
+        final List<StylePart> parts = new ArrayList<>();
 
         private final PDTextStyle defaultStyle;
 
@@ -275,7 +302,7 @@ public class PDStyledString implements CharSequence {
         }
 
         @Override
-        public Appendable append(CharSequence csq) {
+        public Builder append(CharSequence csq) {
             if (csq instanceof PDStyledString) {
                 return append((PDStyledString) csq);
             }
@@ -283,27 +310,31 @@ public class PDStyledString implements CharSequence {
         }
 
         @Override
-        public Appendable append(CharSequence csq, int start, int end) {
+        public Builder append(CharSequence csq, int start, int end) {
             if (csq instanceof PDStyledString) {
                 return append((PDStyledString) csq, start, end);
             }
             return append(csq, defaultStyle, start, end);
         }
 
-        public Appendable append(CharSequence csq, PDTextStyle style) {
+        public Builder append(CharSequence csq, PDTextStyle style) {
             return append(new PDStyledString(csq, style));
         }
 
-        public Appendable append(CharSequence csq, PDTextStyle style, int start, int end) {
+        public Builder append(CharSequence csq, PDTextStyle style, int start, int end) {
             return append(new PDStyledString(csq, style), start, end);
         }
 
         @Override
-        public Appendable append(char c) {
+        public Builder append(char c) {
             return append(c, defaultStyle);
         }
 
-        public Appendable append(PDStyledString csq) {
+        public Builder append(PDStyledString csq) {
+            if (csq.length() == 0) {
+                // Got nothing - do nothing
+                return this;
+            }
             final int initLength = str.length();
             str.append(csq);
             if (parts.isEmpty()) {
@@ -324,11 +355,11 @@ public class PDStyledString implements CharSequence {
             return this;
         }
 
-        public Appendable append(PDStyledString csq, int start, int end) {
+        public Builder append(PDStyledString csq, int start, int end) {
             return append(csq.subSequence(start, end));
         }
 
-        public Appendable append(char c, PDTextStyle style) {
+        public Builder append(char c, PDTextStyle style) {
             final int initLength = str.length();
             str.append(c);
             if (parts.isEmpty()) {
@@ -343,6 +374,102 @@ public class PDStyledString implements CharSequence {
                     parts.add(new StylePart(initLength, initLength + 1, style));
                 }
             }
+            return this;
+        }
+
+        /**
+         * Apply default style to entire string.
+         *
+         * @return this builder object
+         */
+        public Builder clearStyle() {
+            return setStyle(defaultStyle);
+        }
+
+        /**
+         * Apply default style to specified range
+         *
+         * @param beginIndex begin index (inclusive)
+         * @param endIndex   end index (exclusive)
+         * @return this builder object
+         */
+        public Builder clearStyle(int beginIndex, int endIndex) {
+            return setStyle(defaultStyle, beginIndex, endIndex);
+        }
+
+        /**
+         * Apply a style to entire string.
+         *
+         * @param style style to set
+         * @return this builder object
+         */
+        public Builder setStyle(PDTextStyle style) {
+            parts.clear();
+            parts.add(new StylePart(0, str.length(), style));
+            return this;
+        }
+
+        /**
+         * Apply a style to specified range
+         *
+         * @param style      style to set
+         * @param beginIndex begin index (inclusive)
+         * @param endIndex   end index (exclusive)
+         * @return this builder object
+         */
+        public Builder setStyle(PDTextStyle style, int beginIndex, int endIndex) {
+            if (style == null) {
+                throw new NullPointerException("Style can't be null");
+            }
+            if (beginIndex < 0) {
+                throw new StringIndexOutOfBoundsException(beginIndex);
+            }
+            if (endIndex > str.length()) {
+                throw new StringIndexOutOfBoundsException(endIndex);
+            }
+            int subLen = endIndex - beginIndex;
+            if (subLen < 0) {
+                throw new StringIndexOutOfBoundsException(subLen);
+            }
+            if (beginIndex == 0 && endIndex == str.length()) {
+                return setStyle(style);
+            }
+
+            List<StylePart> newParts = new ArrayList<>();
+            Iterator<StylePart> it = parts.iterator();
+            StylePart p = null;
+            while (it.hasNext()) {
+                p = it.next();
+                if (beginIndex < p.endIdx) {
+                    break;
+                }
+                newParts.add(p);
+            }
+            if (p != null) {
+                if (p.beginIdx < beginIndex) {
+                    newParts.add(new StylePart(p.beginIdx, beginIndex, p.style));
+                }
+
+                newParts.add(new StylePart(beginIndex, endIndex, style));
+
+                if (endIndex > p.endIdx) {
+                    while (it.hasNext()) {
+                        p = it.next();
+                        if (endIndex <= p.endIdx) {
+                            break;
+                        }
+                    }
+                }
+
+                if (endIndex < p.endIdx) {
+                    newParts.add(new StylePart(endIndex, p.endIdx, p.style));
+                }
+                it.forEachRemaining(newParts::add);
+
+                parts.clear();
+                parts.addAll(newParts);
+            }
+
             return this;
         }
 
@@ -362,7 +489,25 @@ public class PDStyledString implements CharSequence {
         }
 
         public PDStyledString toStyledString() {
-            return new PDStyledString(str.toString(), parts.stream().toArray(StylePart[]::new));
+            // Merge parts before building string
+            List<StylePart> pp = new ArrayList<>();
+            StylePart lastPart = null;
+            for (StylePart p : parts) {
+                if (lastPart == null) {
+                    lastPart = p;
+                    continue;
+                }
+
+                if (lastPart.style.equals(p.style)) {
+                    lastPart = lastPart.setEnd(p.endIdx);
+                } else {
+                    pp.add(lastPart);
+                    lastPart = p;
+                }
+            }
+            pp.add(lastPart);
+
+            return new PDStyledString(str.toString(), pp.stream().toArray(StylePart[]::new));
         }
     }
 }

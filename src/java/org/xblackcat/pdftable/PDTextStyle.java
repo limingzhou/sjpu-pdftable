@@ -3,6 +3,7 @@ package org.xblackcat.pdftable;
 import org.apache.pdfbox.pdmodel.font.PDFont;
 
 import java.awt.*;
+import java.util.Objects;
 
 /**
  * 29.04.2016 12:47
@@ -55,5 +56,25 @@ public class PDTextStyle {
 
     public PDTextStyle with(Color color) {
         return new PDTextStyle(color, getFont(), getFontSize());
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        final PDTextStyle that = (PDTextStyle) o;
+        return Float.compare(that.fontSize, fontSize) == 0 &&
+                Objects.equals(color, that.color) &&
+                Objects.equals(font, that.font);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(color, font, fontSize);
+    }
+
+    @Override
+    public String toString() {
+        return "(" + (color == null ? "Inherited color" : color) + ") " + font + " [" + fontSize + "]";
     }
 }
